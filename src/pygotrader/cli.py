@@ -32,7 +32,7 @@ def create_parser():
         required=True)
     parser.add_argument("--secrets", 
         help="File that contains API secrets required to connect to your exchange",
-        metavar=("SECRETS"),
+        metavar=("SECRETS_FILE"),
         action=SecretsArgumentAction,
         required=True)        
     return parser
