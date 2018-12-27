@@ -1,5 +1,8 @@
 from argparse import Action, ArgumentParser
 import signal
+import curses
+from pygotrader import tui
+
 
 exchange_choices = ['coinbase']
 
@@ -38,7 +41,8 @@ def main():
         args = create_parser().parse_args()
         
         if args.exchange == 'coinbase':
-            pass
+            mytui = tui.TerminalDisplay()
+            curses.wrapper(mytui.display_loop)
         else:
             pass
         
