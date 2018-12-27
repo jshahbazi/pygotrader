@@ -1,4 +1,5 @@
 from argparse import Action, ArgumentParser
+import signal
 
 exchange_choices = ['coinbase']
 
@@ -19,10 +20,30 @@ def create_parser():
         required=True)
     return parser
     
-def main():
-    args = create_parser().parse_args()
+class CustomExit(Exception):
+    #custom class to handle catching signals
+    pass    
+    
+def signal_handler(signum, frame):
+    print('Caught signal %d' % signum)
+    raise CustomExit
 
-    if args.exchange == 'coinbase':
+def main():
+    
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    
+    try:
+    
+        args = create_parser().parse_args()
+        
+        if args.exchange == 'coinbase':
+            pass
+        else:
+            pass
+        
+    except CustomExit:
+        #TODO handle threads exiting here
         pass
-    else:
-        pass
+    
+    print(f"Exiting...")
