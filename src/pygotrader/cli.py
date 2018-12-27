@@ -2,7 +2,7 @@ from argparse import Action, ArgumentParser
 
 exchange_choices = ['coinbase']
 
-class ExchangeAction(Action):
+class ExchangeArgumentAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         exchange = values
         if exchange.lower() not in exchange_choices:
@@ -15,7 +15,7 @@ def create_parser():
     parser.add_argument("--exchange", 
         help=exchange_arg_help,
         metavar=("EXCHANGE"),
-        action=ExchangeAction,
+        action=ExchangeArgumentAction,
         required=True)
     return parser
     
