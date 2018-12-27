@@ -11,4 +11,8 @@ setup(
     #install_requires=[''],
     packages=find_packages('src'),
     package_dir={'':'src'},
+    entry_points={
+    'console_scripts': [
+        'pygotrader=pygotrader.cli:main',
+    ]}
 )
