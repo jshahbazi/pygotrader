@@ -2,7 +2,9 @@ from argparse import Action, ArgumentParser
 import signal
 import curses
 import os
-from pygotrader import tui
+import cbpro
+import traceback
+from pygotrader import tui, order_book
 
 
 exchanges = ['coinbase']
@@ -75,9 +77,13 @@ def main():
         args = create_parser().parse_args()
         
         my_config = MyConfig(exchange=args.exchange,product=args.product)
-
+        my_order_book = order_book.OrderBook(product_id=my_config.product)
+        my_order_book.start()
+        
         mytui = tui.TerminalDisplay()
         curses.wrapper(mytui.display_loop)
         
     except CustomExit:
-        pass
+        my_order_book.close()
+    except Exception as e:
+        print(traceback.format_exc())
