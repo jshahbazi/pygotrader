@@ -4,6 +4,7 @@ https://github.com/danpaquin/coinbasepro-python
 Updates: 
 - Removed the mandatory print statements when opening and closing the order book
 - Added multiprocessing namespace for shared data
+- Added class for turning incoming exchange order updates into objects
 """
 
 ## cbpro/order_book.py
@@ -18,6 +19,19 @@ import pickle
 from cbpro.public_client import PublicClient
 from cbpro.websocket_client import WebsocketClient
 
+class ExchangeMessage(object):
+    def __init__(self, msg):
+        self.sequence = msg["sequence"] if 'sequence' in msg else ""
+        
+        self.time = dt.datetime.strptime(msg["timestamp"], '%Y-%m-%dT%H:%M:%S.%fZ') \
+            if 'timestamp' in msg else dt.datetime.strptime(msg["time"], '%Y-%m-%dT%H:%M:%S.%fZ')
+        self.type = msg["type"]
+        self.product_id = msg["product_id"]
+        self.order_id = msg["order_id"] if 'order_id' in msg else None
+        self.price = float(msg["price"]) if 'price' in msg else None
+        self.side = msg["side"] if 'side' in msg else ""
+        self.remaining_size = msg["remaining_size"] if 'remaining_size' in msg else None
+        self.size = msg["size"] if 'size' in msg else None
 
 class OrderBook(WebsocketClient):
 
