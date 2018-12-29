@@ -1,8 +1,9 @@
 """
 Forked from:
 https://github.com/danpaquin/coinbasepro-python
-Reason: minor updates, mostly to remove the mandatory print statements when opening and
-closing the order book
+Updates: 
+- Removed the mandatory print statements when opening and closing the order book
+- Added multiprocessing namespace for shared data
 """
 
 ## cbpro/order_book.py
@@ -19,7 +20,8 @@ from cbpro.websocket_client import WebsocketClient
 
 
 class OrderBook(WebsocketClient):
-    def __init__(self, product_id='BTC-USD', log_to=None):
+
+    def __init__(self, mp_namespace, product_id='BTC-USD', log_to=None,):
         super(OrderBook, self).__init__(products=product_id)
         self._asks = SortedDict()
         self._bids = SortedDict()
@@ -29,6 +31,7 @@ class OrderBook(WebsocketClient):
         if self._log_to:
             assert hasattr(self._log_to, 'write')
         self._current_ticker = None
+        self._ns = mp_namespace
 
     @property
     def product_id(self):
@@ -37,10 +40,8 @@ class OrderBook(WebsocketClient):
 
     def on_open(self):
         self._sequence = -1
-        # print("-- Subscribed to OrderBook! --\n")
 
     def on_close(self):
-        # print("\n-- OrderBook Socket Closed! --")
         pass
 
     def reset_book(self):
@@ -93,8 +94,7 @@ class OrderBook(WebsocketClient):
 
     def on_sequence_gap(self, gap_start, gap_end):
         self.reset_book()
-        print('Error: messages missing ({} - {}). Re-initializing  book at sequence.'.format(
-            gap_start, gap_end, self._sequence))
+        print(f"Error: messages missing ({gap_start} - {gap_end}). Re-initializing book at sequence {self._sequence}")
 
 
     def add(self, order):
