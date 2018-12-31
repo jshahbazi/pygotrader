@@ -2,11 +2,18 @@ import curses
 import time
 from pygotrader import cli
 
+class DisplayData(object):
+    def __init__(self):
+        self.asks = []
+        self.bids = []
+        self.highest_bid = 0.00
+        self.last_match = 0.00  
 
 class TerminalDisplay(object):
     
-    def __init__(self, ns):
+    def __init__(self, ns, order_book):
         self.ns = ns
+        self.order_book = order_book
     
     def display_loop(self, stdscr):
         self.stdscr = stdscr
@@ -40,14 +47,24 @@ class TerminalDisplay(object):
             except KeyboardInterrupt:
                 self.exit()
 
+        
+    def calculate_data(self):
+        data = DisplayData()
+        data.highest_bid = self.ns.highest_bid
+        data.last_match = self.ns.last_match
+        data.asks = self.ns.asks
+        data.bids = self.ns.bids
+        return data
+        
     def draw(self):
         self.win.erase()
         self.win = curses.newwin(self.height, self.width, 0, 0)
-        self.draw_main_window()
+        data = self.calculate_data()
+        self.draw_main_window(data)
         self.win.refresh()
-        
-        
-    def draw_main_window(self):
+
+      
+    def draw_main_window(self, data):
         # self.win.addstr(0,0,"Running...")
         self.win.addstr(0,0,'Product\t\tBalances\t\t\t\t\t\t\t\t  Ask/Bid     Ask/Bid Depth', curses.A_BOLD)
         self.win.addstr(1,0,"BTC-USD")
@@ -62,17 +79,17 @@ class TerminalDisplay(object):
         self.win.addstr(6, 0, "sell_signal: {}".format('No'))
 
         self.win.addstr(3, 60, "Signal: {}".format('Buy'))
-        self.win.addstr(4, 60, "Highest Bid: {:.2f}".format(self.ns.highest_bid))
-        self.win.addstr(5, 60, "Last Match: {:.2f}".format(self.ns.last_match))
+        self.win.addstr(4, 60, "Highest Bid: {:.2f}".format(data.highest_bid))
+        self.win.addstr(5, 60, "Last Match: {:.2f}".format(data.last_match))
 
-        # self.win.addstr(1,90,"{:.2f}\t{:.2f}".format(data['asks'][4]['price'],data['asks'][4]['depth']), curses.color_pair(3))
-        # self.win.addstr(2,90,"{:.2f}\t{:.2f}".format(data['asks'][3]['price'],data['asks'][3]['depth']), curses.color_pair(3))
-        # self.win.addstr(3,90,"{:.2f}\t{:.2f}".format(data['asks'][2]['price'],data['asks'][2]['depth']), curses.color_pair(3))
-        # self.win.addstr(4,90,"{:.2f}\t{:.2f}".format(data['asks'][1]['price'],data['asks'][1]['depth']), curses.color_pair(3))
-        # self.win.addstr(5,90,"{:.2f}\t{:.2f}".format(data['asks'][0]['price'],data['asks'][0]['depth']), curses.color_pair(3))
+        self.win.addstr(1,90,"{:.2f}\t{:.2f}".format(data.asks[4]['price'],data.asks[4]['depth']), curses.color_pair(3))
+        self.win.addstr(2,90,"{:.2f}\t{:.2f}".format(data.asks[3]['price'],data.asks[3]['depth']), curses.color_pair(3))
+        self.win.addstr(3,90,"{:.2f}\t{:.2f}".format(data.asks[2]['price'],data.asks[2]['depth']), curses.color_pair(3))
+        self.win.addstr(4,90,"{:.2f}\t{:.2f}".format(data.asks[1]['price'],data.asks[1]['depth']), curses.color_pair(3))
+        self.win.addstr(5,90,"{:.2f}\t{:.2f}".format(data.asks[0]['price'],data.asks[0]['depth']), curses.color_pair(3))
         
-        # for idx,bid in enumerate(data['bids']):
-        #     self.win.addstr(6+idx, 90,"{:.2f}\t{:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
+        for idx,bid in enumerate(data.bids):
+            self.win.addstr(6+idx, 90,"{:.2f}\t{:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
     
         self.win.addstr(8, 0, 'Orders:', curses.A_BOLD)
         self.win.addstr(9, 0, 'ID  Product  Side  Type    Price    Remaining Size', curses.A_BOLD)
