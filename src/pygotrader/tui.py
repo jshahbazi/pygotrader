@@ -5,8 +5,8 @@ from pygotrader import cli
 
 class TerminalDisplay(object):
     
-    def __init__(self):
-        pass
+    def __init__(self, ns):
+        self.ns = ns
     
     def display_loop(self, stdscr):
         self.stdscr = stdscr
@@ -22,13 +22,21 @@ class TerminalDisplay(object):
         curses.init_pair(4, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
         self.win = curses.newwin(self.height, self.width, 0, 0)
-        self.stdscr.nodelay(0)
-        
-        self.draw()
+        # self.stdscr.nodelay(0)
+        # start_time = time.time()
+        curses.halfdelay(5)
         while True:
             try:
+                # now = time.time()
+                # if((now - start_time) > 5.0):
+                #     templist = self.ns.exchange_order_matches
+                #     with open('debug.txt','a+') as f:
+                #         f.write(f"Order Matches List - {len(templist)}\n")
+                self.draw()
                 user_entered_command = self.win.getch()
                 self.keypress(user_entered_command)
+                time.sleep(0.1)
+                self.stdscr.clear()
             except KeyboardInterrupt:
                 self.exit()
 
@@ -54,8 +62,9 @@ class TerminalDisplay(object):
         self.win.addstr(6, 0, "sell_signal: {}".format('No'))
 
         self.win.addstr(3, 60, "Signal: {}".format('Buy'))
-        self.win.addstr(4, 60, "Profit: {:.2f}".format(1.00))
-        
+        self.win.addstr(4, 60, "Highest Bid: {:.2f}".format(self.ns.highest_bid))
+        self.win.addstr(5, 60, "Last Match: {:.2f}".format(self.ns.last_match))
+
         # self.win.addstr(1,90,"{:.2f}\t{:.2f}".format(data['asks'][4]['price'],data['asks'][4]['depth']), curses.color_pair(3))
         # self.win.addstr(2,90,"{:.2f}\t{:.2f}".format(data['asks'][3]['price'],data['asks'][3]['depth']), curses.color_pair(3))
         # self.win.addstr(3,90,"{:.2f}\t{:.2f}".format(data['asks'][2]['price'],data['asks'][2]['depth']), curses.color_pair(3))
