@@ -15,13 +15,19 @@ def signal_handler(signum, frame):
 def pause():
     program_pause = input("Press the <ENTER> key to continue...")
     
-def create_namespace(my_manager):
+def create_namespace(my_manager,max_asks=5,max_bids=5):
     ns = my_manager.Namespace()
     ns.exchange_order_matches = my_manager.list()
     ns.my_orders = my_manager.dict()
     ns.last_match = 0.00
     ns.highest_bid = 0.00
     ns.lowest_ask = 0.00
+    ns.asks = my_manager.list()
+    for x in range(0,max_asks):
+        ns.asks.insert(x,{'price':0.00,'depth':0.00})
+    ns.bids = my_manager.list()
+    for x in range(0,max_bids):
+        ns.bids.insert(x,{'price':0.00,'depth':0.00})
     return ns
 
 
@@ -44,7 +50,7 @@ def main():
         my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product)
         my_order_book.start()
         
-        mytui = tui.TerminalDisplay(ns=ns)
+        mytui = tui.TerminalDisplay(ns, my_order_book)
         curses.wrapper(mytui.display_loop)
         
     except CustomExit:
