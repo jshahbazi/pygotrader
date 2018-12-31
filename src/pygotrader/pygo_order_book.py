@@ -4,6 +4,10 @@ from decimal import Decimal
 import pickle
 import time
 import datetime as dt
+from itertools import islice
+from threading import Thread
+import json
+import multiprocessing
 
 class ExchangeMessage(object):
     def __init__(self, msg):
@@ -26,67 +30,53 @@ class ExchangeMessage(object):
 
 class PygoOrderBook(OrderBook):
     def __init__(self, ns, product_id='BTC-USD', log_to=None):
-        super(PygoOrderBook, self).__init__(product_id=product_id)
-        self._ns = ns
-        
+        super().__init__(product_id=product_id)
+        self.ns = ns
+
     def on_message(self, message):
-        if self._log_to:
-            pickle.dump(message, self._log_to)
-
-        sequence = message.get('sequence', -1)
-        if self._sequence == -1:
-            self.reset_book()
-            return
-        if sequence <= self._sequence:
-            # ignore older messages (e.g. before order book initialization from getProductOrderBook)
-            return
-        elif sequence > self._sequence + 1:
-            self.on_sequence_gap(self._sequence, sequence)
-            return
-
-        msg_type = message['type']
-        if msg_type == 'open':
-            self.add(message)
-        elif msg_type == 'done' and 'price' in message:
-            self.remove(message)
-        elif msg_type == 'match':
-            self.match(message)
-            self._current_ticker = message
-        elif msg_type == 'change':
-            self.change(message)
-
-        self._sequence = sequence
-        self._ns.highest_bid = self.get_bid()
+        super().on_message(message)
+        self.ns.highest_bid = self.get_bid()
         
     def match(self, order):
-        size = Decimal(order['size'])
-        price = Decimal(order['price'])
-        
+        super().match(order)
         message_object = ExchangeMessage(order)
-        self._ns.exchange_order_matches.append(message_object)
-        
-        with open('debug.txt','a+') as f:
-            f.write(f"Order Matches List - order_book - {message_object}\n")        
+        self.ns.exchange_order_matches.append(message_object)   
 
-        if order['side'] == 'buy':
-            bids = self.get_bids(price)
-            if not bids:
-                return
-            assert bids[0]['id'] == order['maker_order_id']
-            if bids[0]['size'] == size:
-                self.set_bids(price, bids[1:])
+    def calculate_order_depth(self,max_asks=5,max_bids=5):
+        for x in range(0,max_asks):
+            price = self._asks.iloc[x]
+            depth = sum(a['size'] for a in self._asks[price])
+            self.ns.asks[x] = {'price':price,'depth':depth}
+
+        i=0
+        for bid in reversed(self._bids):
+            if i == max_bids:
+                break
+            price = bid
+            depth = sum(b['size'] for b in self._bids[bid])
+            self.ns.bids[i] = {'price':price,'depth':depth}
+            i=i+1
+
+        
+    def _listen(self):
+        """
+        Overriding the parent's parent (WebsocketClient) listen method
+        in order to calculate the order depth and copy the data to the 
+        shared namespace for the TUI to display
+        """
+        self.keepalive.start()
+        start_time = time.time()
+        while not self.shutdown_event.is_set():
+            try:
+                now = time.time()
+                if((now - start_time) > 0.5):
+                    self.calculate_order_depth()
+                    start_time = now
+                data = self.ws.recv()
+                msg = json.loads(data)
+            except ValueError as e:
+                self.on_error(e)
+            except Exception as e:
+                self.on_error(e)
             else:
-                bids[0]['size'] -= size
-                self.set_bids(price, bids)
-        else:
-            asks = self.get_asks(price)
-            if not asks:
-                return
-            assert asks[0]['id'] == order['maker_order_id']
-            if asks[0]['size'] == size:
-                self.set_asks(price, asks[1:])
-            else:
-                asks[0]['size'] -= size
-                self.set_asks(price, asks)
-                
-        self._ns.last_match = price
+                self.on_message(msg)        
