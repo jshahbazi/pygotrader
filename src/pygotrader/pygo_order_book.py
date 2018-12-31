@@ -24,9 +24,9 @@ class ExchangeMessage(object):
         
         
 
-class SharedOrderBook(OrderBook):
+class PygoOrderBook(OrderBook):
     def __init__(self, ns, product_id='BTC-USD', log_to=None):
-        super(SharedOrderBook, self).__init__(product_id=product_id)
+        super(PygoOrderBook, self).__init__(product_id=product_id)
         self._ns = ns
         
     def on_message(self, message):

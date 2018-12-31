@@ -2,7 +2,7 @@ import os, signal, traceback
 import curses
 import cbpro
 import multiprocessing
-from pygotrader import arguments,config, shared_order_book, tui
+from pygotrader import arguments,config, pygo_order_book, tui
 
 class CustomExit(Exception):
     #custom class to handle catching signals
@@ -41,7 +41,7 @@ def main():
         
         my_config = config.MyConfig(exchange=args.exchange,product=args.product)
         
-        my_order_book = shared_order_book.SharedOrderBook(ns,product_id=my_config.product)
+        my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product)
         my_order_book.start()
         
         mytui = tui.TerminalDisplay(ns=ns)
