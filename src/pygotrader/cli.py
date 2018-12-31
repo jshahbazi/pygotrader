@@ -1,9 +1,8 @@
-import signal
+import os, signal, traceback
 import curses
-import os
 import cbpro
-import traceback
-from pygotrader import arguments,config, order_book, tui
+import multiprocessing
+from pygotrader import arguments,config, shared_order_book, tui
 
 class CustomExit(Exception):
     #custom class to handle catching signals
@@ -13,12 +12,27 @@ def signal_handler(signum, frame):
     print('Caught signal %d' % signum)
     raise CustomExit
 
+def pause():
+    program_pause = input("Press the <ENTER> key to continue...")
+    
+def create_namespace(my_manager):
+    ns = my_manager.Namespace()
+    ns.exchange_order_matches = my_manager.list()
+    ns.my_orders = my_manager.dict()
+    ns.last_match = 0.00
+    ns.highest_bid = 0.00
+    ns.lowest_ask = 0.00
+    return ns
+
 
 
 def main():
 
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
+    
+    my_manager = multiprocessing.Manager()
+    ns = create_namespace(my_manager)
     
     try:
     
@@ -27,10 +41,10 @@ def main():
         
         my_config = config.MyConfig(exchange=args.exchange,product=args.product)
         
-        my_order_book = order_book.OrderBook(product_id=my_config.product)
+        my_order_book = shared_order_book.SharedOrderBook(ns,product_id=my_config.product)
         my_order_book.start()
         
-        mytui = tui.TerminalDisplay()
+        mytui = tui.TerminalDisplay(ns=ns)
         curses.wrapper(mytui.display_loop)
         
     except CustomExit:
