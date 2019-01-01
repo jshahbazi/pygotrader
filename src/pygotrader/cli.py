@@ -46,8 +46,12 @@ def main():
         args = argument_parser.parse_args()
         
         my_config = config.MyConfig(exchange=args.exchange,product=args.product)
-        my_config.load_secrets(args.secrets)
-        my_authenticated_client = my_config.get_coinbase_authenticated_client()
+        
+        if args.secrets:
+            my_config.load_secrets(args.secrets)
+            my_authenticated_client = my_config.get_coinbase_authenticated_client()
+        else:
+            my_authenticated_client = None
         
         # my_orders = my_authenticated_client.get_orders()
         # my_accounts = my_authenticated_client.get_accounts()

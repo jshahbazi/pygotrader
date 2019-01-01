@@ -59,12 +59,13 @@ class TerminalDisplay(object):
         data.my_orders = self.ns.my_orders
         data.my_balances = {'USD':0.00,data.product:0.00}
         
-        my_accounts = self.authenticated_client.get_accounts()
-        for elem in my_accounts:
-            if(elem['currency'] == 'USD'):
-                data.my_balances['USD'] = float(elem['balance'])
-            if(elem['currency'] == data.product):
-                data.my_balances[data.product] = float(elem['balance'])
+        if self.authenticated_client:
+            my_accounts = self.authenticated_client.get_accounts()
+            for elem in my_accounts:
+                if(elem['currency'] == 'USD'):
+                    data.my_balances['USD'] = float(elem['balance'])
+                if(elem['currency'] == data.product):
+                    data.my_balances[data.product] = float(elem['balance'])
                 
         return data
         
