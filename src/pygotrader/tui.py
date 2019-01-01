@@ -54,6 +54,7 @@ class TerminalDisplay(object):
         data.last_match = self.ns.last_match
         data.asks = self.ns.asks
         data.bids = self.ns.bids
+        data.my_orders = self.ns.my_orders
         return data
         
     def draw(self):
@@ -64,8 +65,7 @@ class TerminalDisplay(object):
         self.win.refresh()
 
       
-    def draw_main_window(self, data):
-        # self.win.addstr(0,0,"Running...")
+    def draw_main_window(self, data, debug=False):
         self.win.addstr(0,0,'Product\t\tBalances\t\t\t\t\t\t\t\t  Ask/Bid     Ask/Bid Depth', curses.A_BOLD)
         self.win.addstr(1,0,"BTC-USD")
         self.win.addstr("\t\tUSD:  ")    
@@ -73,35 +73,37 @@ class TerminalDisplay(object):
         self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
         self.win.addstr("{:>10.9f}".format(0.00), curses.color_pair(1))
         
-        self.win.addstr(3, 0, "Bought: {}".format('Yes'))
-        self.win.addstr(4, 0, "Sold: {}".format('No'))
-        self.win.addstr(5, 0, "buy_signal: {}".format('Yes'))
-        self.win.addstr(6, 0, "sell_signal: {}".format('No'))
+        if debug:
+            self.win.addstr(3, 0, "Bought: {}".format('Yes'))
+            self.win.addstr(4, 0, "Sold: {}".format('No'))
+            self.win.addstr(5, 0, "buy_signal: {}".format('Yes'))
+            self.win.addstr(6, 0, "sell_signal: {}".format('No'))
+            self.win.addstr(3, 60, "Signal: {}".format('Buy'))
+            
+        self.win.addstr(1, 60, "Highest Bid: {:.2f}".format(data.highest_bid))
+        self.win.addstr(2, 60, "Last Match: {:.2f}".format(data.last_match))
 
-        self.win.addstr(3, 60, "Signal: {}".format('Buy'))
-        self.win.addstr(4, 60, "Highest Bid: {:.2f}".format(data.highest_bid))
-        self.win.addstr(5, 60, "Last Match: {:.2f}".format(data.last_match))
+        max_asks = len(data.asks)
+        for idx,ask in enumerate(data.asks):
+            self.win.addstr(1+idx,90,"{:.2f}\t{:.2f}".format(data.asks[(max_asks-1)-idx]['price'],data.asks[(max_asks-1)-idx]['depth']), curses.color_pair(3))
 
-        self.win.addstr(1,90,"{:.2f}\t{:.2f}".format(data.asks[4]['price'],data.asks[4]['depth']), curses.color_pair(3))
-        self.win.addstr(2,90,"{:.2f}\t{:.2f}".format(data.asks[3]['price'],data.asks[3]['depth']), curses.color_pair(3))
-        self.win.addstr(3,90,"{:.2f}\t{:.2f}".format(data.asks[2]['price'],data.asks[2]['depth']), curses.color_pair(3))
-        self.win.addstr(4,90,"{:.2f}\t{:.2f}".format(data.asks[1]['price'],data.asks[1]['depth']), curses.color_pair(3))
-        self.win.addstr(5,90,"{:.2f}\t{:.2f}".format(data.asks[0]['price'],data.asks[0]['depth']), curses.color_pair(3))
-        
+        # max_bids = len(data.bids)
         for idx,bid in enumerate(data.bids):
             self.win.addstr(6+idx, 90,"{:.2f}\t{:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
     
         self.win.addstr(8, 0, 'Orders:', curses.A_BOLD)
         self.win.addstr(9, 0, 'ID  Product  Side  Type    Price    Remaining Size', curses.A_BOLD)
-        # for idx,order in enumerate(my_orders):
-        #     if(idx <= 4):
-        #         if('product_id' in order):
-        #             self.win.addstr(10+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
-        #             if(order['side'] == 'buy'):
-        #                 self.win.addstr("{}".format(order['side']), curses.color_pair(1))
-        #             else:
-        #                 self.win.addstr("{}".format(order['side']), curses.color_pair(2))
-        #             self.win.addstr("  {}   {:.2f}    {:.9f}".format(order['type'],float(order['price']),float(order['size'])))
+        
+        if data.my_orders:
+            for idx,order in enumerate(data.my_orders):
+                if(idx <= 4):
+                    if('product_id' in order):
+                        self.win.addstr(10+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
+                        if(order['side'] == 'buy'):
+                            self.win.addstr("{}".format(order['side']), curses.color_pair(1))
+                        else:
+                            self.win.addstr("{}".format(order['side']), curses.color_pair(2))
+                        self.win.addstr("  {}   {:.2f}    {:.9f}".format(order['type'],float(order['price']),float(order['size'])))
         
         self.win.addstr(self.height-3, 0, 'Message: {}'.format('Running...'))
               
