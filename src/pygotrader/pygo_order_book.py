@@ -35,12 +35,22 @@ class PygoOrderBook(OrderBook):
 
     def on_message(self, message):
         super().on_message(message)
+        self.handle_my_order(message) 
         self.ns.highest_bid = self.get_bid()
         
     def match(self, order):
         super().match(order)
         message_object = ExchangeMessage(order)
         self.ns.exchange_order_matches.append(message_object)   
+
+    def has_started(self):
+        if(self._sequence <= 10):
+            return False
+        else:
+            return True
+            
+    
+
 
     def calculate_order_depth(self,max_asks=5,max_bids=5):
         for x in range(0,max_asks):
@@ -79,4 +89,94 @@ class PygoOrderBook(OrderBook):
             except Exception as e:
                 self.on_error(e)
             else:
-                self.on_message(msg)        
+                self.on_message(msg)
+
+
+
+                
+    def add_my_order(self, order_id, order):
+        self.ns.my_orders.update({order_id:order})
+
+    def remove_my_order(self, order_id):
+        try:
+            del self.ns.my_orders[order_id]
+        except ValueError:
+            pass
+        
+    def lookup_my_order(self, order_id):
+        if order_id in self.ns.my_orders:
+            return True
+        else:
+            return False
+            
+    def update_my_order(self, order_id, order):
+        self.ns.my_orders.update({order_id:order})
+
+    def get_my_order(self, order_id):
+        return self.ns.my_orders[order_id]
+        
+    def convert_message_to_order(self, message):
+        order = {
+            'order_id': message.get('order_id') or message.get('id') or message.get('maker_order_id') ,
+            'status': message.get('status'),
+            'side': message['side'],
+            'price': message['price'],
+            'size': message.get('size') or message.get('remaining_size')
+        }
+        return order
+        
+
+    def get_my_current_orders(self, authenticated_client):
+        all_my_orders = (authenticated_client.get_orders(product_id=self.product_id,status=["open"]))[0]
+        for idx,order in enumerate(all_my_orders):
+            order_id = order['id'] 
+            current_order = {}
+            current_order['order_id'] = order['id']
+            current_order['status'] = 'open'
+            current_order['price'] = order['price']
+            current_order['side'] = order['side']
+            current_order['size'] = order['size']
+            self.add_my_order(order['id'],current_order) 
+                    
+                    
+    def handle_my_order(self, message):
+        if('order_id' in message):
+            order_id =  message["order_id"]
+        elif('maker_order_id' in message):
+            order_id =  message["maker_order_id"]
+        else:
+            return        
+                
+        
+        if(self.lookup_my_order(order_id)):
+            myorder = self.convert_message_to_order(message)
+            msg_type = message['type']
+
+            if msg_type == 'open':
+                self.add_my_order(order_id, myorder)
+                
+            elif msg_type == 'done' and message['reason'] == 'filled':
+                myorder['status'] = 'filled'
+                self.update_my_order(order_id, myorder)
+                
+            elif msg_type == 'done' and message['reason'] == 'canceled':
+                myorder['status'] = 'canceled'
+                self.update_my_order(order_id, myorder)
+                
+            elif msg_type == 'match':
+                #subtract size
+                temp_order = self.get_my_order(order_id)
+                current_size = Decimal(temp_order['size'])
+                updated_size = Decimal(myorder['size'])
+                new_size = current_size - updated_size
+                if(new_size == Decimal(0.00)):
+                    temp_order['status'] = 'done'
+                else:
+                    temp_order['status'] = 'open'
+                temp_order['remaining_size'] = str(new_size)
+                self.update_my_order(order_id, temp_order)
+                
+            else: # msg_type == 'change':
+                # with open('orderupdater_output.txt','a+') as f:
+                #     f.write(json.dumps(message, indent=1) + "\n")
+                pass

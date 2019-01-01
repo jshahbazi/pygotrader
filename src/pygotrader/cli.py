@@ -1,4 +1,4 @@
-import os, signal, traceback
+import json, os, signal, traceback
 import curses
 import cbpro
 import multiprocessing
@@ -46,7 +46,12 @@ def main():
         args = argument_parser.parse_args()
         
         my_config = config.MyConfig(exchange=args.exchange,product=args.product)
+        my_config.load_secrets(args.secrets)
+        authenticated_client = my_config.get_coinbase_authenticated_client()
         
+        my_orders = authenticated_client.get_orders()
+        my_accounts = authenticated_client.get_accounts()
+
         my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product)
         my_order_book.start()
         
