@@ -47,15 +47,15 @@ def main():
         
         my_config = config.MyConfig(exchange=args.exchange,product=args.product)
         my_config.load_secrets(args.secrets)
-        authenticated_client = my_config.get_coinbase_authenticated_client()
+        my_authenticated_client = my_config.get_coinbase_authenticated_client()
         
-        my_orders = authenticated_client.get_orders()
-        my_accounts = authenticated_client.get_accounts()
+        # my_orders = my_authenticated_client.get_orders()
+        # my_accounts = my_authenticated_client.get_accounts()
 
         my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product)
         my_order_book.start()
         
-        mytui = tui.TerminalDisplay(ns, my_order_book)
+        mytui = tui.TerminalDisplay(ns, my_order_book, my_authenticated_client)
         curses.wrapper(mytui.display_loop)
         
     except CustomExit:
