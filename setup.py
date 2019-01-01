@@ -8,7 +8,7 @@ setup(
     version="0.1.0",
     description="Algorithmic cryptocurrency trader",
     #long_description=readme,
-    #install_requires=[''],
+    install_requires=['cbpro'],
     packages=find_packages('src'),
     package_dir={'':'src'},
     entry_points={
