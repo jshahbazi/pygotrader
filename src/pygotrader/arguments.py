@@ -19,6 +19,7 @@ class SecretsArgumentAction(Action):
             pass
         else:
             parser.error("Secrets file does not exist")
+        namespace.secrets = secrets_file_name
             
 class ProductArgumentAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):
