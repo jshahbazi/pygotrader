@@ -11,9 +11,10 @@ class DisplayData(object):
 
 class TerminalDisplay(object):
     
-    def __init__(self, ns, order_book):
+    def __init__(self, ns, order_book, authenticated_client):
         self.ns = ns
         self.order_book = order_book
+        self.authenticated_client = authenticated_client
     
     def display_loop(self, stdscr):
         self.stdscr = stdscr
@@ -50,11 +51,21 @@ class TerminalDisplay(object):
         
     def calculate_data(self):
         data = DisplayData()
+        data.product = self.order_book.products
         data.highest_bid = self.ns.highest_bid
         data.last_match = self.ns.last_match
         data.asks = self.ns.asks
         data.bids = self.ns.bids
         data.my_orders = self.ns.my_orders
+        data.my_balances = {'USD':0.00,data.product:0.00}
+        
+        my_accounts = self.authenticated_client.get_accounts()
+        for elem in my_accounts:
+            if(elem['currency'] == 'USD'):
+                data.my_balances['USD'] = float(elem['balance'])
+            if(elem['currency'] == data.product):
+                data.my_balances[data.product] = float(elem['balance'])
+                
         return data
         
     def draw(self):
@@ -67,11 +78,11 @@ class TerminalDisplay(object):
       
     def draw_main_window(self, data, debug=False):
         self.win.addstr(0,0,'Product\t\tBalances\t\t\t\t\t\t\t\t  Ask/Bid     Ask/Bid Depth', curses.A_BOLD)
-        self.win.addstr(1,0,f"{self.order_book.products}")
+        self.win.addstr(1,0,f"{data.product}")
         self.win.addstr("\t\tUSD:  ")    
-        self.win.addstr("{:>10.2f}".format(0.00), curses.color_pair(1)) 
+        self.win.addstr("{:>10.2f}".format(data.my_balances['USD']), curses.color_pair(1)) 
         self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
-        self.win.addstr("{:>10.9f}".format(0.00), curses.color_pair(1))
+        self.win.addstr("{:>10.9f}".format(data.my_balances[data.product]), curses.color_pair(1))
         
         if debug:
             self.win.addstr(3, 0, "Bought: {}".format('STUB'))
