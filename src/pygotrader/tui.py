@@ -67,18 +67,18 @@ class TerminalDisplay(object):
       
     def draw_main_window(self, data, debug=False):
         self.win.addstr(0,0,'Product\t\tBalances\t\t\t\t\t\t\t\t  Ask/Bid     Ask/Bid Depth', curses.A_BOLD)
-        self.win.addstr(1,0,"BTC-USD")
+        self.win.addstr(1,0,f"{self.order_book.products}")
         self.win.addstr("\t\tUSD:  ")    
         self.win.addstr("{:>10.2f}".format(0.00), curses.color_pair(1)) 
         self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
         self.win.addstr("{:>10.9f}".format(0.00), curses.color_pair(1))
         
         if debug:
-            self.win.addstr(3, 0, "Bought: {}".format('Yes'))
-            self.win.addstr(4, 0, "Sold: {}".format('No'))
-            self.win.addstr(5, 0, "buy_signal: {}".format('Yes'))
-            self.win.addstr(6, 0, "sell_signal: {}".format('No'))
-            self.win.addstr(3, 60, "Signal: {}".format('Buy'))
+            self.win.addstr(3, 0, "Bought: {}".format('STUB'))
+            self.win.addstr(4, 0, "Sold: {}".format('STUB'))
+            self.win.addstr(5, 0, "buy_signal: {}".format('STUB'))
+            self.win.addstr(6, 0, "sell_signal: {}".format('STUB'))
+            self.win.addstr(3, 60, "Signal: {}".format('STUB'))
             
         self.win.addstr(1, 60, "Highest Bid: {:.2f}".format(data.highest_bid))
         self.win.addstr(2, 60, "Last Match: {:.2f}".format(data.last_match))
@@ -105,7 +105,7 @@ class TerminalDisplay(object):
                             self.win.addstr("{}".format(order['side']), curses.color_pair(2))
                         self.win.addstr("  {}   {:.2f}    {:.9f}".format(order['type'],float(order['price']),float(order['size'])))
         
-        self.win.addstr(self.height-3, 0, 'Message: {}'.format('Running...'))
+        self.win.addstr(self.height-3, 0, 'Message: {}'.format('STUB'))
               
         status_message=''
         if(status_message):
