@@ -39,7 +39,7 @@ def create_parser():
         help="File that contains API secrets required to connect to your exchange",
         metavar=("SECRETS_FILE"),
         action=SecretsArgumentAction,
-        required=True)  
+        required=False)  
     parser.add_argument("--product", 
         help=f"Coin pairing to trade with.  Currently supported products: {products}",
         metavar=("PRODUCT"),
