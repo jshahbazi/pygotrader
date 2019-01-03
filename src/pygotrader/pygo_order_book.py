@@ -42,15 +42,7 @@ class PygoOrderBook(OrderBook):
         super().match(order)
         message_object = ExchangeMessage(order)
         self.ns.exchange_order_matches.append(message_object)   
-
-    def has_started(self):
-        if(self._sequence <= 10):
-            return False
-        else:
-            return True
-            
-    
-
+        self.ns.last_match = message_object.price
 
     def calculate_order_depth(self,max_asks=5,max_bids=5):
         for x in range(0,max_asks):
