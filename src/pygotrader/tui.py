@@ -125,8 +125,12 @@ class TerminalDisplay(object):
             self.win.addstr(self.height-2, 0, "{}".format(status_message))
         else:
             self.win.addstr(self.height-2, 0, "{}".format(''))      
+        
+        if self.authenticated_client:
+            self.win.addstr(self.height-1, 0, "Press key for action - (B)uy, (S)ell, (C)ancel, c(L)ear, (F)lip, (Q)uit:")  
+        else:
+            self.win.addstr(self.height-1, 0, "Press key for action - (Q)uit:")  
             
-        self.win.addstr(self.height-1, 0, "Press key for action - (B)uy, (S)ell, (C)ancel, c(L)ear, (F)lip, (Q)uit:")  
         
 
     def keypress(self, char):
