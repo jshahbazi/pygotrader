@@ -58,7 +58,7 @@ class TerminalDisplay(object):
         data.bids = self.ns.bids
         data.my_orders = self.ns.my_orders
         data.my_balances = {'USD':0.00,data.product:0.00}
-        
+        data.message = self.ns.message
         if self.authenticated_client:
             my_accounts = self.authenticated_client.get_accounts()
             for elem in my_accounts:
@@ -80,10 +80,11 @@ class TerminalDisplay(object):
     def draw_main_window(self, data, debug=False):
         self.win.addstr(0,0,'Product\t\tBalances\t\t\t\t\t\t\t\t  Ask/Bid     Ask/Bid Depth', curses.A_BOLD)
         self.win.addstr(1,0,f"{data.product}")
-        self.win.addstr("\t\tUSD:  ")    
-        self.win.addstr("{:>10.2f}".format(data.my_balances['USD']), curses.color_pair(1)) 
-        self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
-        self.win.addstr("{:>10.9f}".format(data.my_balances[data.product]), curses.color_pair(1))
+        if self.authenticated_client:
+            self.win.addstr("\t\tUSD:  ")    
+            self.win.addstr("{:>10.2f}".format(data.my_balances['USD']), curses.color_pair(1)) 
+            self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
+            self.win.addstr("{:>10.9f}".format(data.my_balances[data.product]), curses.color_pair(1))
         
         if debug:
             self.win.addstr(3, 0, "Bought: {}".format('STUB'))
@@ -117,7 +118,7 @@ class TerminalDisplay(object):
                             self.win.addstr("{}".format(order['side']), curses.color_pair(2))
                         self.win.addstr("  {}   {:.2f}    {:.9f}".format(order['type'],float(order['price']),float(order['size'])))
         
-        self.win.addstr(self.height-3, 0, 'Message: {}'.format('STUB'))
+        self.win.addstr(self.height-3, 0, 'Message: {}'.format(data.message))
               
         status_message=''
         if(status_message):

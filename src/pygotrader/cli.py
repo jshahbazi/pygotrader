@@ -22,6 +22,7 @@ def create_namespace(my_manager,max_asks=5,max_bids=5):
     ns.last_match = 0.00
     ns.highest_bid = 0.00
     ns.lowest_ask = 0.00
+    ns.message = ''
     ns.asks = my_manager.list()
     for x in range(0,max_asks):
         ns.asks.insert(x,{'price':0.00,'depth':0.00})
@@ -44,7 +45,7 @@ def main():
     
         argument_parser = arguments.create_parser()
         args = argument_parser.parse_args()
-        
+
         my_config = config.MyConfig(exchange=args.exchange,product=args.product)
         
         if args.secrets:
@@ -52,6 +53,7 @@ def main():
             my_authenticated_client = my_config.get_coinbase_authenticated_client()
         else:
             my_authenticated_client = None
+            ns.message = 'Running in view mode'
         
         # my_orders = my_authenticated_client.get_orders()
         # my_accounts = my_authenticated_client.get_accounts()

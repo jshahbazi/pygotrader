@@ -34,7 +34,8 @@ def create_parser():
         help=f"Exchange to connect to.  Currently supported exchanges: {exchanges}",
         metavar=("EXCHANGE"),
         action=ExchangeArgumentAction,
-        required=True)
+        required=False,
+        default=exchanges[0])
     parser.add_argument("--secrets", 
         help="File that contains API secrets required to connect to your exchange",
         metavar=("SECRETS_FILE"),
@@ -44,5 +45,6 @@ def create_parser():
         help=f"Coin pairing to trade with.  Currently supported products: {products}",
         metavar=("PRODUCT"),
         action=ProductArgumentAction,
-        required=True) 
+        required=False,
+        default=products[0]) 
     return parser
