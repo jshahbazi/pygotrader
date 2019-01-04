@@ -4,8 +4,8 @@ Algorithmic cryptocurrency trader written in Python
 ### Installation instructions
 This program is currently not on pypi.org, so for now you can use the following commands to install:
 ```
- git clone https://github.com/jshahbazi/pygotrader
- pip3 install --user .
+ git clone https://github.com/jshahbazi/pygotrader.git
+ pip3 install -e .
 ```
 
 ### Running the program
@@ -22,4 +22,10 @@ To change the viewed coin to something, use the --product argument, i.e.:
 For help:
 ```
  pygotrader -h
+```
+
+### Uninstall
+From the application directory:
+```
+ python3 setup.py develop --uninstall
 ```
