@@ -23,3 +23,9 @@ For help:
 ```
  pygotrader -h
 ```
+
+###Uninstall
+From the application directory:
+```
+ python3 setup.py develop --uninstall
+```
