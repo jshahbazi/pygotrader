@@ -8,6 +8,9 @@ class DisplayData(object):
         self.bids = []
         self.highest_bid = 0.00
         self.last_match = 0.00  
+        self.product = 'BTC-USD'
+        self.my_balances = {'USD':0.00,self.product:0.00}
+        self.message = ''
 
 class TerminalDisplay(object):
     
@@ -57,7 +60,6 @@ class TerminalDisplay(object):
         data.asks = self.ns.asks
         data.bids = self.ns.bids
         data.my_orders = self.ns.my_orders
-        data.my_balances = {'USD':0.00,data.product:0.00}
         data.message = self.ns.message
         if self.authenticated_client:
             my_accounts = self.authenticated_client.get_accounts()
