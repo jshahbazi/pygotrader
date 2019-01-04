@@ -5,7 +5,7 @@ Algorithmic cryptocurrency trader written in Python
 This program is currently not on pypi.org, so for now you can use the following commands to install:
 ```
  git clone https://github.com/jshahbazi/pygotrader.git
- pip3 install --user .
+ pip3 install -e .
 ```
 
 ### Running the program
