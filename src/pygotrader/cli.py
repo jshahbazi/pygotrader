@@ -1,4 +1,4 @@
-import json, os, signal, traceback
+import json, os, signal, time, traceback
 import curses
 import cbpro
 import multiprocessing
@@ -54,18 +54,16 @@ def main():
         else:
             my_authenticated_client = None
             ns.message = 'Running in view mode'
-        
-        # my_orders = my_authenticated_client.get_orders()
-        # my_accounts = my_authenticated_client.get_accounts()
 
         my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product)
         my_order_book.start()
         
         my_order_handler = order_handler.OrderHandler(my_authenticated_client,ns)
         my_order_handler.start()
-        
+
         mytui = tui.TerminalDisplay(ns, my_order_book, my_authenticated_client)
         curses.wrapper(mytui.display_loop)
+    
         
     except CustomExit:
         my_order_book.close()
