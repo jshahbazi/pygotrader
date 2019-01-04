@@ -2,7 +2,7 @@ import json, os, signal, traceback
 import curses
 import cbpro
 import multiprocessing
-from pygotrader import arguments,config, pygo_order_book, tui
+from pygotrader import arguments,config, order_handler, pygo_order_book, tui
 
 class CustomExit(Exception):
     #custom class to handle catching signals
@@ -61,11 +61,15 @@ def main():
         my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product)
         my_order_book.start()
         
+        my_order_handler = order_handler.OrderHandler(my_authenticated_client,ns)
+        my_order_handler.start()
+        
         mytui = tui.TerminalDisplay(ns, my_order_book, my_authenticated_client)
         curses.wrapper(mytui.display_loop)
         
     except CustomExit:
         my_order_book.close()
+        my_order_handler.close()
         
     except Exception as e:
         print(traceback.format_exc())
