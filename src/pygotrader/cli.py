@@ -5,7 +5,7 @@ import multiprocessing
 from pygotrader import arguments,config, order_handler, pygo_order_book, tui
 
 class CustomExit(Exception):
-    #custom class to handle catching signals
+    #custom class to exit program
     pass    
     
 def signal_handler(signum, frame):
@@ -38,6 +38,17 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     
+    #The multiprocessing Manager namespace seems like the easiest/least-risky
+    #way of sharing data across processes.  However, it requires use of dicts
+    #and lists from the Manager class.  
+    #Important notes:
+    # 1) Operations on this data structure can be expensive.  Reads are cheap, and 
+    #    simple writes aren't too bad, but for example, deleted a
+    #    Manager.list() data structure and creating a new one can take a few
+    #    hundredths of a second.  Its better to do work on a local data structure
+    #    and then copy it over to the shared namespace.
+    # 2) Namespaces don't work with deep data structures, i.e. a custom class
+    #    You can do a dict inside a list, or vice-versa, but that's about it
     my_manager = multiprocessing.Manager()
     ns = create_namespace(my_manager)
     
@@ -53,7 +64,7 @@ def main():
             my_authenticated_client = my_config.get_coinbase_authenticated_client()
         else:
             my_authenticated_client = None
-            ns.message = 'Running in view mode'
+            ns.message = 'Running in read-only mode'
 
         my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product)
         my_order_book.start()
