@@ -30,9 +30,9 @@ For help:
 ```
 
 ### Uninstall
-From the application directory:
 ```
- python3 setup.py develop --uninstall
+ pip uninstall cbpro
+ pip uninstall pygotrader
 ```
 
 ### Performance Notes
