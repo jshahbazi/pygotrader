@@ -43,7 +43,7 @@ def main():
     #and lists from the Manager class.  
     #Important notes:
     # 1) Operations on this data structure can be expensive.  Reads are cheap, and 
-    #    simple writes aren't too bad, but for example, deleted a
+    #    simple writes aren't too bad, but for example, deleting a
     #    Manager.list() data structure and creating a new one can take a few
     #    hundredths of a second.  Its better to do work on a local data structure
     #    and then copy it over to the shared namespace.
