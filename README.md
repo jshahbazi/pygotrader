@@ -3,16 +3,15 @@ Algorithmic cryptocurrency trader written in Python
 
 ### Requirements
 * Python 3.7+
-* Modified coinbasepro-python library: https://github.com/jshahbazi/coinbasepro-python.git
+* Modified coinbasepro-python library: https://github.com/jshahbazi/coinbasepro-python
 
 ### Installation instructions
 This program is currently not on pypi.org and requires a forked version of the coinbasepro-python library, so for now you can use the following commands to install:
 ```
- git clone https://github.com/jshahbazi/coinbasepro-python.git
- pip install -e ./coinbasepro-python/
- git clone https://github.com/jshahbazi/pygotrader.git
- pip install -e ./pygotrader/
+ pip install --upgrade git+git://github.com/jshahbazi/coinbasepro-python
+ pip install --upgrade git+git://github.com/jshahbazi/pygotrader
 ```
+Note that this will override any existing installation of the coinbasepro-python library.
 
 ### Running the program
 To view only the current BTC-USD orders on Coinbase, you can simply run:
@@ -35,3 +34,6 @@ From the application directory:
 ```
  python3 setup.py develop --uninstall
 ```
+
+### Performance Notes
+* The infrastructure for Coinbase's exchange runs on AWS, so the best place to run this (or any sort of trading utlity) is AWS
