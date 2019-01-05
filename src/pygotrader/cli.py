@@ -74,17 +74,19 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     
-    #The multiprocessing Manager namespace seems like the easiest/least-risky
-    #way of sharing data across processes.  However, it requires use of dicts
-    #and lists from the Manager class.  
-    #Important notes:
-    # 1) Operations on this data structure can be expensive.  Reads are cheap, and 
-    #    simple writes aren't too bad, but for example, deleting a
-    #    Manager.list() data structure and creating a new one can take a few
-    #    hundredths of a second.  Its better to do work on a local data structure
-    #    and then copy it over to the shared namespace.
-    # 2) Namespaces don't work with deep data structures, i.e. a custom class
-    #    You can do a dict inside a list, or vice-versa, but that's about it
+    """
+    The multiprocessing Manager namespace seems like the easiest/least-risky
+    way of sharing data across processes.  However, it requires use of dicts
+    and lists from the Manager class.  
+    Important notes:
+    1) Operations on this data structure can be expensive.  Reads are cheap, and 
+        simple writes aren't too bad, but for example, deleting a
+        Manager.list() data structure and creating a new one can take a few
+        hundredths of a second.  Its better to do work on a local data structure
+        and then copy it over to the shared namespace.
+    2) Namespaces don't work with deep data structures, i.e. a custom class
+        You can do a dict inside a list, or vice-versa, but that's about it
+    """
     my_manager = multiprocessing.Manager()
     ns = create_namespace(my_manager)
     
