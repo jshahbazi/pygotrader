@@ -73,10 +73,12 @@ class TerminalDisplay(object):
         
     def draw(self):
         self.win.erase()
-        self.win = curses.newwin(self.height, self.width, 0, 0)
+        #self.win = curses.newwin(self.height, self.width, 0, 0)
         data = self.calculate_data()
+        curses.curs_set(0)
         self.draw_main_window(data)
         self.win.refresh()
+        curses.curs_set(1)
 
       
     def draw_main_window(self, data, debug=False):
