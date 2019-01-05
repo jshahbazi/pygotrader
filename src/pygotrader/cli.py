@@ -5,17 +5,26 @@ import multiprocessing
 from pygotrader import arguments,config, order_handler, pygo_order_book, tui
 
 class CustomExit(Exception):
-    #custom class to exit program
+    """Custom class to exit program"""
     pass    
     
 def signal_handler(signum, frame):
+    """Wrapper to handle break signals from the user"""
     print('Caught signal %d' % signum)
     raise CustomExit
 
 def pause():
+    """Lazy wrapper for a cli pause"""
     program_pause = input("Press the <ENTER> key to continue...")
     
 def create_namespace(my_manager,max_asks=5,max_bids=5):
+    """Initialize and construct the shared namespace
+    
+    As mentioned elsewhere, lists and dicts need to be created from the Manager
+    class otherwise updates to them won't propagate.  Remember, this is more of a 
+    helper class, not one to do serious work with.  Operations can be expensive.
+    And custom classes can't be used.
+    """
     ns = my_manager.Namespace()
     ns.exchange_order_matches = my_manager.list()
     ns.my_orders = my_manager.dict()
@@ -34,7 +43,34 @@ def create_namespace(my_manager,max_asks=5,max_bids=5):
 
 
 def main():
-
+    """Entry point for the program
+    
+    Create the objects that are going to run the various parts of the programs.
+    Threads/processes are not directly create here.  That's been left for the
+    individual classes.
+    
+    Variables of note:
+    ns - a multiprocessing.Manager.namespace that is for sharing data between 
+    threads and processes
+    
+    Objects of note:
+    MyConfig - loads and stores arguments passed in as well as user config 
+    information stored in outside files
+    PygoOrderBook - the order book that uses a websocket to pull data from the
+    exchange.  Does not actually place orders.
+    AuthenticatedClient - this has the secrets for the user loaded from the 
+    external config files.  This is the class that actually places orders that 
+    organized and called by the OrderHandler class.  
+    OrderHandler - separate-running process to place and cancel orders through
+    functions in the AuthenticatedClient class. 
+    
+    TODO:
+     - Add the ability to create external config class via an install function 
+     or some kind of config function within the tui or cli
+     - Separate processes running algorithms to buy/sell
+     - Ability for user to write their own algorithm
+    """
+    
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
     
