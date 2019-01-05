@@ -2,8 +2,8 @@
 Algorithmic cryptocurrency trader written in Python
 
 ### Requirements
-Python 3.7+
-Modified coinbasepro-python library: https://github.com/jshahbazi/coinbasepro-python.git
+* Python 3.7+
+* Modified coinbasepro-python library: https://github.com/jshahbazi/coinbasepro-python.git
 
 ### Installation instructions
 This program is currently not on pypi.org and requires a forked version of the coinbasepro-python library, so for now you can use the following commands to install:
