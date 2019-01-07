@@ -3,6 +3,8 @@ import curses
 import cbpro
 import multiprocessing
 from pygotrader import arguments,config, order_handler, pygo_order_book, tui
+from importlib import reload
+
 
 class CustomExit(Exception):
     """Custom class to exit program"""
@@ -10,11 +12,13 @@ class CustomExit(Exception):
     
 def signal_handler(signum, frame):
     """Wrapper to handle break signals from the user"""
-    print('Caught signal %d' % signum)
+    # print('Caught signal %d' % signum)
     raise CustomExit
 
 def pause():
-    """Lazy wrapper for a cli pause"""
+    """Lazy wrapper for a cli pause
+    ¯\_(ツ)_/¯
+    """
     program_pause = input("Press the <ENTER> key to continue...")
     
 def create_namespace(my_manager,max_asks=5,max_bids=5):
@@ -69,6 +73,7 @@ def main():
      or some kind of config function within the tui or cli
      - Separate processes running algorithms to buy/sell
      - Ability for user to write their own algorithm
+     - Rewrite cbpro library to use websockets instead of websocket-client library
     """
     
     signal.signal(signal.SIGTERM, signal_handler)
@@ -97,24 +102,28 @@ def main():
 
         my_config = config.MyConfig(exchange=args.exchange,product=args.product)
         
-        if args.secrets:
-            my_config.load_secrets(args.secrets)
+        if args.config:
+            my_config.load_config(args.config)
             my_authenticated_client = my_config.get_coinbase_authenticated_client()
         else:
             my_authenticated_client = None
             ns.message = 'Running in read-only mode'
 
-        my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product)
+        my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product, url=my_config.websocket_url)
         my_order_book.start()
         
         my_order_handler = order_handler.OrderHandler(my_authenticated_client,ns)
         my_order_handler.start()
+        
+        # while True:
+        #     time.sleep(1)
 
         mytui = tui.TerminalDisplay(ns, my_order_book, my_authenticated_client)
         curses.wrapper(mytui.display_loop)
     
         
     except CustomExit:
+        pass
         my_order_book.close()
         my_order_handler.close()
         

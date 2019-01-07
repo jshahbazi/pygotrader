@@ -12,14 +12,14 @@ class ExchangeArgumentAction(Action):
             parser.error("Unknown exchange")
         namespace.exchange = exchange.lower()
 
-class SecretsArgumentAction(Action):
+class ConfigArgumentAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        secrets_file_name = values
-        if os.path.isfile(secrets_file_name):
+        config_file_name = values
+        if os.path.isfile(config_file_name):
             pass
         else:
-            parser.error("Secrets file does not exist")
-        namespace.secrets = secrets_file_name
+            parser.error("Config file does not exist")
+        namespace.config = config_file_name
             
 class ProductArgumentAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -36,10 +36,10 @@ def create_parser():
         action=ExchangeArgumentAction,
         required=False,
         default=exchanges[0])
-    parser.add_argument("--secrets", 
-        help="File that contains API secrets required to connect to your exchange",
-        metavar=("SECRETS_FILE"),
-        action=SecretsArgumentAction,
+    parser.add_argument("--config", 
+        help="File that contains API secrets and configuration information required to connect to your exchange",
+        metavar=("CONFIG_FILE"),
+        action=ConfigArgumentAction,
         required=False)  
     parser.add_argument("--product", 
         help=f"Coin pairing to trade with.  Currently supported products: {products}",

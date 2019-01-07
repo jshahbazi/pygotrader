@@ -3,7 +3,7 @@ Class for holding all of the current configuration information
  and loading secrets for connections to exchanges.  Also creates
  authenticated clients.
  
-Secrets file format:
+Config file format:
 
 {"key":"12345",
  "b64secret":"1l2o3o4n5g",
@@ -40,14 +40,14 @@ class MyConfig(object):
     def websocket_url(self):
         return self._websocket_url
         
-    def load_secrets(self,path_to_secrets_file):
-        secrets_file = open(path_to_secrets_file)
-        secrets = json.load(secrets_file)
-        self._key = secrets['key']
-        self._b64secret = secrets['b64secret']
-        self._passphrase = secrets['passphrase']
-        self._api_url = secrets['api_url']
-        self._websocket_url = secrets['websocket_url']
+    def load_config(self,path_to_config_file):
+        config_file = open(path_to_config_file)
+        config = json.load(config_file)
+        self._key = config['key']
+        self._b64secret = config['b64secret']
+        self._passphrase = config['passphrase']
+        self._api_url = config['api_url']
+        self._websocket_url = config['websocket_url']
         
     def get_coinbase_authenticated_client(self):
         return AuthenticatedClient(key=self._key, 

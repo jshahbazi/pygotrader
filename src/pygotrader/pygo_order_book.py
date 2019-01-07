@@ -29,8 +29,9 @@ class ExchangeMessage(object):
         
 
 class PygoOrderBook(OrderBook):
-    def __init__(self, ns, product_id='BTC-USD', log_to=None):
+    def __init__(self, ns, product_id='BTC-USD', log_to=None, url='wss://ws-feed.pro.coinbase.com'):
         super().__init__(product_id=product_id)
+        self.url = url
         self.ns = ns
 
     def on_message(self, message):
