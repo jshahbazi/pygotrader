@@ -3,6 +3,9 @@ import time
 from pygotrader import cli
 
 class DisplayData(object):
+    """Object to hold data from both shared memory and other classes.  Used for 
+    updating the UI
+    """
     def __init__(self):
         self.asks = []
         self.bids = []
@@ -14,6 +17,28 @@ class DisplayData(object):
         self.my_crypto = ''
 
 class TerminalDisplay(object):
+    """The main TUI interface.  Objects are passed here from the main cli 
+    function and updated either on their own or through shared memory (the 
+    manager namespace).  This is built on the curses library.
+    
+    Methods of note:
+    display_loop: Main display loop that sets up the window and then calls the
+    draw method to actually build and draw the screen.  Watches for, and handles, 
+    key presses by the user.
+    
+    draw: Builds the window using the draw_main_window method and then displays it
+    
+    calculate_data: Pulls data from other objects or the shared memory namespace
+    and puts it into a DisplayData object for use by the draw() method. 
+    
+    keypress: Handles the user keypresses
+    
+    TODO: 
+    - Removed fixed positioning and handle resizing properly
+    - Add more user input (such as entering amounts)
+    - Add the ability to create and edit trading algorithms on the fly
+    """
+    
     
     def __init__(self, ns, order_book, authenticated_client, order_handler, debug = False):
         self.ns = ns
