@@ -15,10 +15,13 @@ class DisplayData(object):
 
 class TerminalDisplay(object):
     
-    def __init__(self, ns, order_book, authenticated_client):
+    def __init__(self, ns, order_book, authenticated_client, order_handler, debug = False):
         self.ns = ns
         self.order_book = order_book
         self.authenticated_client = authenticated_client
+        self.view_mode = False if authenticated_client else True
+        self.order_handler = order_handler
+        self.debug = debug
     
     def display_loop(self, stdscr):
         self.stdscr = stdscr
@@ -83,69 +86,68 @@ class TerminalDisplay(object):
         curses.curs_set(1)
 
       
-    def draw_main_window(self, data, debug=False):
-        self.win.addstr(0,0,'Product\t\tBalances\t\t\t\t\t\t\t\t  Ask/Bid     Ask/Bid Depth', curses.A_BOLD)
-        self.win.addstr(1,0,f"{data.product}")
-        if self.authenticated_client:
-            self.win.addstr("\t\tUSD:  ")    
-            self.win.addstr("{:>10.2f}".format(data.my_balances['USD']), curses.color_pair(1)) 
-            self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
-            self.win.addstr("{:>10.9f}".format(data.my_balances[data.product]), curses.color_pair(1))
-        
-        if debug:
-            self.win.addstr(3, 0, "Bought: {}".format('STUB'))
-            self.win.addstr(4, 0, "Sold: {}".format('STUB'))
-            self.win.addstr(5, 0, "buy_signal: {}".format('STUB'))
-            self.win.addstr(6, 0, "sell_signal: {}".format('STUB'))
-            self.win.addstr(3, 60, "Signal: {}".format('STUB'))
-            
-        self.win.addstr(1, 60, "Highest Bid: {:.2f}".format(data.highest_bid))
-        self.win.addstr(2, 60, "Last Match: {:.2f}".format(data.last_match))
+    def draw_main_window(self, data):
+        try:
+            self.win.addstr(0,0,'Product\t\tBalances\t\t\t\t\t\t\t\t  Ask/Bid     Ask/Bid Depth', curses.A_BOLD)
+            self.win.addstr(1,0,f"{data.product}")
+            if not self.view_mode:
+                self.win.addstr("\t\tUSD:  ")    
+                self.win.addstr("{:>10.2f}".format(data.my_balances['USD']), curses.color_pair(1)) 
+                self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
+                self.win.addstr("{:>10.9f}".format(data.my_balances[data.product]), curses.color_pair(1))
 
-        max_asks = len(data.asks)
-        for idx,ask in enumerate(data.asks):
-            self.win.addstr(1+idx,90,"{:.2f}\t{:.2f}".format(data.asks[(max_asks-1)-idx]['price'],data.asks[(max_asks-1)-idx]['depth']), curses.color_pair(3))
-
-        # max_bids = len(data.bids)
-        for idx,bid in enumerate(data.bids):
-            self.win.addstr(6+idx, 90,"{:.2f}\t{:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
+            self.win.addstr(1, 60, "Highest Bid: {:.2f}".format(data.highest_bid))
+            self.win.addstr(2, 60, "Last Match: {:.2f}".format(data.last_match))
     
-        self.win.addstr(8, 0, 'Orders:', curses.A_BOLD)
-        self.win.addstr(9, 0, 'ID  Product  Side  Type    Price    Remaining Size', curses.A_BOLD)
+            max_asks = len(data.asks)
+            for idx,ask in enumerate(data.asks):
+                self.win.addstr(1+idx,90,"{:.2f}\t{:.2f}".format(data.asks[(max_asks-1)-idx]['price'],data.asks[(max_asks-1)-idx]['depth']), curses.color_pair(3))
+    
+            # max_bids = len(data.bids)
+            for idx,bid in enumerate(data.bids):
+                self.win.addstr(6+idx, 90,"{:.2f}\t{:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
         
-        if data.my_orders:
-            for idx,order in enumerate(data.my_orders):
-                if(idx <= 4):
-                    if('product_id' in order):
-                        self.win.addstr(10+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
-                        if(order['side'] == 'buy'):
-                            self.win.addstr("{}".format(order['side']), curses.color_pair(1))
-                        else:
-                            self.win.addstr("{}".format(order['side']), curses.color_pair(2))
-                        self.win.addstr("  {}   {:.2f}    {:.9f}".format(order['type'],float(order['price']),float(order['size'])))
-        
-        self.win.addstr(self.height-3, 0, 'Message: {}'.format(data.message))
-              
-        status_message=''
-        if(status_message):
-            self.win.addstr(self.height-2, 0, "{}".format(status_message))
-        else:
-            self.win.addstr(self.height-2, 0, "{}".format(''))      
-        
-        if self.authenticated_client:
-            self.win.addstr(self.height-1, 0, "Press key for action - (B)uy, (S)ell, (C)ancel, (Q)uit:")  
-        else:
-            self.win.addstr(self.height-1, 0, "Press key for action - (Q)uit:")  
+            self.win.addstr(4, 0, 'Orders:', curses.A_BOLD)
+            self.win.addstr(5, 0, 'ID  Product  Side  Type    Price    Remaining Size', curses.A_BOLD)
             
-        
+            if data.my_orders:
+                for idx,order in enumerate(data.my_orders):
+                    if(idx <= 4):
+                        if('product_id' in order):
+                            self.win.addstr(10+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
+                            if(order['side'] == 'buy'):
+                                self.win.addstr("{}".format(order['side']), curses.color_pair(1))
+                            else:
+                                self.win.addstr("{}".format(order['side']), curses.color_pair(2))
+                            self.win.addstr("  {}   {:.2f}    {:.9f}".format(order['type'],float(order['price']),float(order['size'])))
+            
+            self.win.addstr(self.height-3, 0, 'Message: {}'.format(data.message))
+                  
+            status_message=''
+            if(status_message):
+                self.win.addstr(self.height-2, 0, "{}".format(status_message))
+            else:
+                self.win.addstr(self.height-2, 0, "{}".format(''))      
+            
+            if self.view_mode:
+                self.win.addstr(self.height-1, 0, "Press key for action - (Q)uit:")
+            else:
+                self.win.addstr(self.height-1, 0, "Press key for action - (B)uy, (S)ell, (C)ancel, (Q)uit:")  
+        except curses.error:
+            raise cli.CustomExit
 
     def keypress(self, char):
         if char == curses.KEY_EXIT or char == ord('q'):
             self.exit()
             
-        if char == ord('b'):
-            self.draw()
-            return
+        if not self.view_mode:
+            if char == ord('b'):
+                self.order_handler.buy_order(size=0.1,price=0.00,product_id=self.order_book.products)
+                return
+            
+            if char == ord('s'):
+                self.order_handler.sell_order(size=0.1,price=0.00,product_id=self.order_book.products)
+                return        
 
     def exit(self):
         self.win.erase()

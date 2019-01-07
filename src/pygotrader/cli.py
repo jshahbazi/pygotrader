@@ -107,7 +107,7 @@ def main():
             my_authenticated_client = my_config.get_coinbase_authenticated_client()
         else:
             my_authenticated_client = None
-            ns.message = 'Running in read-only mode'
+            ns.message = 'Running in view mode'
 
         my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product, url=my_config.websocket_url)
         my_order_book.start()
@@ -118,7 +118,7 @@ def main():
         # while True:
         #     time.sleep(1)
 
-        mytui = tui.TerminalDisplay(ns, my_order_book, my_authenticated_client)
+        mytui = tui.TerminalDisplay(ns, my_order_book, my_authenticated_client, my_order_handler)
         curses.wrapper(mytui.display_loop)
     
         
