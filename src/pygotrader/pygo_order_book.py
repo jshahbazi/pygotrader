@@ -10,6 +10,9 @@ import json
 import multiprocessing
 
 class ExchangeMessage(object):
+    """Turns an exchange message into an object so that it can be used 
+    for trading algorithms
+    """
     def __init__(self, msg):
         self.sequence = msg["sequence"] if 'sequence' in msg else ""
         self.time = dt.datetime.strptime(msg["timestamp"], '%Y-%m-%dT%H:%M:%S.%fZ') \
@@ -29,6 +32,20 @@ class ExchangeMessage(object):
         
 
 class PygoOrderBook(OrderBook):
+    """Extension of the OrderBook class and grandparent WebsocketClient class
+    
+    Most of the functionality of the OrderBook class is fine, but some things 
+    need to be replaced or added in the following areas:
+    - Checking orders from the exchange for user's
+    - Handling matches (completed buys/sells)
+    - Calculating order depth per price
+    - Updating the _listen method since that's the core of the receive loop
+    - Adding functionality to handle orders placed by user
+    
+    TODO:
+    - Replace OrderBook's use of websocket-client with websockets
+    - Figure out a better way to share ExchangeMessage objects between processes/threads
+    """
     def __init__(self, ns, product_id='BTC-USD', log_to=None, url='wss://ws-feed.pro.coinbase.com'):
         super().__init__(product_id=product_id)
         self.url = url
@@ -42,7 +59,7 @@ class PygoOrderBook(OrderBook):
     def match(self, order):
         super().match(order)
         message_object = ExchangeMessage(order)
-        self.ns.exchange_order_matches.append(message_object)   
+        # self.ns.exchange_order_matches.append(message_object)   
         self.ns.last_match = message_object.price
 
     def calculate_order_depth(self,max_asks=5,max_bids=5):
