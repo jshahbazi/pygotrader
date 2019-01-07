@@ -10,6 +10,11 @@ import json
 import multiprocessing
 
 class OrderHandler(object):
+    """Handles making orders to an exchange and makes sure they're placed or
+    canceled.
+    
+    
+    """
     def __init__(self, authenticated_client, multiprocessing_namespace,debug=False):
         self.authenticated_client = authenticated_client
         self.ns = multiprocessing_namespace
@@ -47,7 +52,8 @@ class OrderHandler(object):
         self.cancel_thread.start()
         
         self.shutdown_event.wait()
-            
+        
+
     def start(self):
         self.process = multiprocessing.Process(target=self.main_loop)
         self.process.start()
@@ -56,11 +62,11 @@ class OrderHandler(object):
         self.shutdown_event.set()
         self.process.join()        
         
-    def buy_order(size,price,product_id):
+    def buy_order(self,size,price,product_id):
         result = self.place_order(size=size,price=price,side='buy',product_id=product_id)
         return result
     
-    def sell_order(size,price,product_id):
+    def sell_order(self,size,price,product_id):
         result = self.place_order(size=size,price=price,side='sell',product_id=product_id)
         return result
         
@@ -71,7 +77,8 @@ class OrderHandler(object):
             if((now - start_time) > self.order_timeout):
                 return False
                 
-            my_order = self.authenticated_client.place_order(type='limit',post_only=True,size=size, price=price, side=side, product_id=product_id)
+            # my_order = self.authenticated_client.place_order(type='limit',post_only=True,size=size, price=price, side=side, product_id=product_id)
+            my_order = self.authenticated_client.place_order(product_id=product_id,side=side,order_type='market',size=size,)
             
             if('id' in my_order):
                 order_id = my_order['id']
@@ -86,20 +93,22 @@ class OrderHandler(object):
         try:
             canceled_order = self.authenticated_client.cancel_order(order_id)
             if(canceled_order == order_id):
-                return True
+                return True, "Order Cancelled"
             else:
-                return False
-            #     try:
-            #         canceled_order = get_my_order(order_id)
-            #     except ValueError:
-            #         canceled_order = ''
-            #     if(canceled_order and 'done_reason' in canceled_order and canceled_order['done_reason'] == 'filled'):
-            #         buy_order_filled(canceled_order)
-            #         return False
-            #     else:
-            #         return True
+                return False, canceled_order
         except Exception as e:
             if self.debug:
                 with open('debug.txt','a+') as f:
                     f.write(f"Cancel Order Error - Order: {order_id}\nError: {traceback.format_exc()}\n")
             return False         
+            
+    def get_order(self, order_timeout):
+        for i in range(0,10):
+            try:
+                my_order = self.authenticated_client.get_order(order_id)
+                return my_order
+            except requests.exceptions.HTTPError:
+                time.sleep(1)
+                continue
+                
+        raise ValueError("(OrderHandler.get_order) Unknown error: Order ID not being returned.")        
