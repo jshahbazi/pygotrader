@@ -13,7 +13,14 @@ class OrderHandler(object):
     """Handles making orders to an exchange and makes sure they're placed or
     canceled.
     
+    Important methods:
+    main_loop: A separate process that launches child threads to handle buy, sell,
+    and cancel orders, and waits for a shutdown event.  The child threads each wait
+    for specific events before doing their work.
     
+    place_order: Places orders via the authenticated_client.  
+        NOTE: Currently hard-coded for market orders with a size of 0.1 for 
+        safety/testing purposes
     """
     def __init__(self, authenticated_client, multiprocessing_namespace,debug=False):
         self.authenticated_client = authenticated_client
