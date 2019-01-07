@@ -1,3 +1,17 @@
+"""
+Create and return a parser for command-line arguments
+
+The various *ArgumentAction classes are used to check given arguments
+and raise an error if something is wrong. 
+
+Important functions:
+create_parser: main function that creates and returns a parser
+
+Values for exchanges and currencies are currently hard-coded
+
+TODO:
+- Move exchanges and currencies to a config file
+"""
 from argparse import Action, ArgumentParser
 import os
 
@@ -29,6 +43,10 @@ class ProductArgumentAction(Action):
         namespace.product = product.upper()            
 
 def create_parser():
+    """Helper function to parse command-line arguments
+    
+    Returns a parser to pull the arguments from
+    """
     parser = ArgumentParser(description="")
     parser.add_argument("--exchange", 
         help=f"Exchange to connect to.  Currently supported exchanges: {exchanges}",
