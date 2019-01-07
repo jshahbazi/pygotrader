@@ -66,7 +66,7 @@ class PygoOrderBook(OrderBook):
         for x in range(0,max_asks):
             price = self._asks.iloc[x]
             depth = sum(a['size'] for a in self._asks[price])
-            self.ns.asks[x] = {'price':price,'depth':depth}
+            self.ns.ui_asks[x] = {'price':price,'depth':depth}
 
         i=0
         for bid in reversed(self._bids):
@@ -74,7 +74,7 @@ class PygoOrderBook(OrderBook):
                 break
             price = bid
             depth = sum(b['size'] for b in self._bids[bid])
-            self.ns.bids[i] = {'price':price,'depth':depth}
+            self.ns.ui_bids[i] = {'price':price,'depth':depth}
             i=i+1
 
         

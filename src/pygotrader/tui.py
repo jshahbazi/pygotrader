@@ -61,6 +61,13 @@ class TerminalDisplay(object):
         curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
         curses.init_pair(4, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
+        display_max_asks=5
+        for x in range(0,display_max_asks):
+            self.ns.ui_asks.insert(x,{'price':0.00,'depth':0.00})        
+        display_max_bids=5
+        for x in range(0,display_max_bids):
+            self.ns.ui_bids.insert(x,{'price':0.00,'depth':0.00})        
+
         self.win = curses.newwin(self.height, self.width, 0, 0)
         # self.stdscr.nodelay(0)
         # start_time = time.time()
@@ -86,8 +93,8 @@ class TerminalDisplay(object):
         data.product = self.order_book.products
         data.highest_bid = self.ns.highest_bid
         data.last_match = self.ns.last_match
-        data.asks = self.ns.asks
-        data.bids = self.ns.bids
+        data.asks = self.ns.ui_asks
+        data.bids = self.ns.ui_bids
         data.my_orders = self.ns.my_orders
         data.message = self.ns.message
         data.my_crypto = data.product.split('-')[0] #This is super hacky. TODO: Fix

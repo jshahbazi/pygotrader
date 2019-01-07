@@ -21,7 +21,7 @@ def pause():
     """
     program_pause = input("Press the <ENTER> key to continue...")
     
-def create_namespace(my_manager,max_asks=5,max_bids=5):
+def create_namespace(my_manager):
     """Initialize and construct the shared namespace
     
     As mentioned elsewhere, lists and dicts need to be created from the Manager
@@ -36,12 +36,8 @@ def create_namespace(my_manager,max_asks=5,max_bids=5):
     ns.highest_bid = 0.00
     ns.lowest_ask = 0.00
     ns.message = ''
-    ns.asks = my_manager.list()
-    for x in range(0,max_asks):
-        ns.asks.insert(x,{'price':0.00,'depth':0.00})
-    ns.bids = my_manager.list()
-    for x in range(0,max_bids):
-        ns.bids.insert(x,{'price':0.00,'depth':0.00})
+    ns.ui_asks = my_manager.list()
+    ns.ui_bids = my_manager.list()
     return ns
 
 
