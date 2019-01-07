@@ -11,6 +11,7 @@ class DisplayData(object):
         self.product = 'BTC-USD'
         self.my_balances = {'USD':0.00,self.product:0.00}
         self.message = ''
+        self.my_crypto = ''
 
 class TerminalDisplay(object):
     
@@ -61,12 +62,13 @@ class TerminalDisplay(object):
         data.bids = self.ns.bids
         data.my_orders = self.ns.my_orders
         data.message = self.ns.message
+        data.my_crypto = data.product.split('-')[0] #This is super hacky. TODO: Fix
         if self.authenticated_client:
             my_accounts = self.authenticated_client.get_accounts()
             for elem in my_accounts:
                 if(elem['currency'] == 'USD'):
                     data.my_balances['USD'] = float(elem['balance'])
-                if(elem['currency'] == data.product):
+                if(elem['currency'] == data.my_crypto):
                     data.my_balances[data.product] = float(elem['balance'])
                 
         return data
@@ -131,7 +133,7 @@ class TerminalDisplay(object):
             self.win.addstr(self.height-2, 0, "{}".format(''))      
         
         if self.authenticated_client:
-            self.win.addstr(self.height-1, 0, "Press key for action - (B)uy, (S)ell, (C)ancel, c(L)ear, (F)lip, (Q)uit:")  
+            self.win.addstr(self.height-1, 0, "Press key for action - (B)uy, (S)ell, (C)ancel, (Q)uit:")  
         else:
             self.win.addstr(self.height-1, 0, "Press key for action - (Q)uit:")  
             
