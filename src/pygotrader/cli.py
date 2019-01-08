@@ -3,7 +3,6 @@ import curses
 import cbpro
 import multiprocessing
 from pygotrader import arguments,config, order_handler, pygo_order_book, tui
-from importlib import reload
 
 
 class CustomExit(Exception):
@@ -28,9 +27,18 @@ def create_namespace(my_manager):
     class otherwise updates to them won't propagate.  Remember, this is more of a 
     helper class, not one to do serious work with.  Operations can be expensive.
     And custom classes can't be used.
+    
+    Order format for placement into the buy and sell order queue lists:
+    {'order':'buy','type':'market','product':'BTC','size':0.1,'price':1.00}
+    
+    Order format for placement into the cancel order queue lists:
+    {'order':'cancel','order_id':1111111}    
     """
     ns = my_manager.Namespace()
     ns.exchange_order_matches = my_manager.list()
+    ns.buy_order_queue = my_manager.list()
+    ns.sell_order_queue = my_manager.list()
+    ns.cancel_order_queue = my_manager.list()
     ns.my_orders = my_manager.dict()
     ns.last_match = 0.00
     ns.highest_bid = 0.00
@@ -111,8 +119,9 @@ def main():
         my_order_handler = order_handler.OrderHandler(my_authenticated_client,ns)
         my_order_handler.start()
         
-        # while True:
-        #     time.sleep(1)
+        while not my_order_book.has_started:
+            time.sleep(0.1)
+
 
         mytui = tui.TerminalDisplay(ns, my_order_book, my_authenticated_client, my_order_handler)
         curses.wrapper(mytui.display_loop)
