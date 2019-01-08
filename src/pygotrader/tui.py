@@ -47,6 +47,8 @@ class TerminalDisplay(object):
         self.view_mode = False if authenticated_client else True
         self.order_handler = order_handler
         self.debug = debug
+        self.user_input = ''
+        self.menu_mode = 'normal'
     
     def display_loop(self, stdscr):
         self.stdscr = stdscr
@@ -69,19 +71,32 @@ class TerminalDisplay(object):
             self.ns.ui_bids.insert(x,{'price':0.00,'depth':0.00})        
 
         self.win = curses.newwin(self.height, self.width, 0, 0)
-        # self.stdscr.nodelay(0)
-        # start_time = time.time()
+
+        curses.noecho()
         curses.halfdelay(5)
+
+        user_input = ''
         while True:
             try:
-                # now = time.time()
-                # if((now - start_time) > 5.0):
-                #     templist = self.ns.exchange_order_matches
-                #     with open('debug.txt','a+') as f:
-                #         f.write(f"Order Matches List - {len(templist)}\n")
                 self.draw()
-                user_entered_command = self.win.getch()
-                self.keypress(user_entered_command)
+                user_keypress = self.win.getch()
+                #getch() is set to non-blocking via curses.halfdelay, so -1 is value it has when nothing is entered
+                if user_keypress == -1:
+                    pass
+                else:
+                    self.ns.message = str(user_keypress)
+                    key = chr(user_keypress)
+                    if self.menu_mode == 'normal':
+                        self.keypress(key)
+                    else:
+                        if user_keypress in [10,'\n','\r']: #10 is line-feed
+                            # self.ns.message = self.user_input
+                            self.keypress(self.user_input)
+                            self.user_input = ''
+                        elif user_keypress in [127,curses.KEY_BACKSPACE]:
+                            self.user_input = self.user_input[:-1]
+                        else:
+                            self.user_input += key
                 time.sleep(0.1)
                 self.stdscr.clear()
             except KeyboardInterrupt:
@@ -108,10 +123,23 @@ class TerminalDisplay(object):
                 
         return data
         
+    def set_menu_mode(self):
+        if self.view_mode:
+            self.menu = f"Press key for action - (Q)uit: {self.user_input}"
+        else:
+            if self.menu_mode == 'normal':
+                self.menu = f"Press key for action - (B)uy, (S)ell, (C)ancel, (Q)uit: {self.user_input}"
+            elif self.menu_mode == 'buy-amount':
+                self.menu = f"Type in amount and press <Enter>: {self.user_input}"
+            elif self.menu_mode == 'sell-amount':
+                self.menu = f"Type in amount and press <Enter>: {self.user_input}"
+        
+        
     def draw(self):
         self.win.erase()
         #self.win = curses.newwin(self.height, self.width, 0, 0)
         data = self.calculate_data()
+        self.set_menu_mode()
         curses.curs_set(0)
         self.draw_main_window(data)
         self.win.refresh()
@@ -161,26 +189,43 @@ class TerminalDisplay(object):
             else:
                 self.win.addstr(self.height-2, 0, "{}".format(''))      
             
-            if self.view_mode:
-                self.win.addstr(self.height-1, 0, "Press key for action - (Q)uit:")
-            else:
-                self.win.addstr(self.height-1, 0, "Press key for action - (B)uy, (S)ell, (C)ancel, (Q)uit:")  
+            self.win.addstr(self.height-1, 0, self.menu)
         except curses.error:
             raise cli.CustomExit
 
-    def keypress(self, char):
-        if char == curses.KEY_EXIT or char == ord('q'):
-            self.exit()
-            
-        if not self.view_mode:
-            if char == ord('b'):
-                self.order_handler.create_buy_order(size=0.1,price=1.00,product_id=self.order_book.products)
-                return
-            
-            if char == ord('s'):
-                self.order_handler.create_sell_order(size=0.1,price=1.00,product_id=self.order_book.products)
-                return        
-
+    def keypress(self, input):
+        if self.view_mode:
+            if input == curses.KEY_EXIT or input == 'q':
+                self.exit()
+        elif not self.view_mode:
+            if self.menu_mode == 'normal':
+                if input == 'c':
+                    # self.menu_mode = 'buy-amount'
+                    self.ns.message = 'Cancel has not been implemented yet...'
+                    return
+                if input == 'b':
+                    self.menu_mode = 'buy-amount'
+                    return
+                if input == 's':
+                    self.menu_mode = 'sell-amount'
+                    return        
+                if input == curses.KEY_EXIT or input == 'q':
+                    self.exit()
+            elif self.menu_mode == 'buy-amount':
+                if input == '':
+                    self.menu_mode = 'normal'
+                    return
+                amount = float(input)
+                self.order_handler.create_buy_order(size=amount,price=0.00,product_id=self.order_book.products)
+                self.menu_mode = 'normal'
+            elif self.menu_mode == 'sell-amount':
+                if input == '':
+                    self.menu_mode = 'normal'
+                    return
+                amount = float(input)
+                self.order_handler.create_sell_order(size=amount,price=0.00,product_id=self.order_book.products)                
+                self.menu_mode = 'normal'
+                
     def exit(self):
         self.win.erase()
         self.win = curses.newwin(self.height, self.width, 0, 0)            
