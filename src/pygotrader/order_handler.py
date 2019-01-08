@@ -9,6 +9,11 @@ from threading import Thread
 import json
 import multiprocessing
 
+def debug_write(text, debug_file='debug.txt'):
+    """Helper function to keep code clean"""
+    with open(debug_file,'a+') as f:
+        f.write(f"{text}\n")    
+
 class OrderHandler(object):
     """Handles making orders to an exchange and makes sure they're placed or
     canceled.
@@ -19,8 +24,6 @@ class OrderHandler(object):
     for specific events before doing their work.
     
     place_order: Places orders via the authenticated_client.  
-        NOTE: Currently hard-coded for market orders with a size of 0.1 for 
-        safety/testing purposes
     """
     def __init__(self, authenticated_client, multiprocessing_namespace,debug=False):
         self.authenticated_client = authenticated_client
@@ -35,22 +38,58 @@ class OrderHandler(object):
     def main_loop(self):
         def _buy_loop():
             while not self.shutdown_event.is_set():
-                self.buy.wait()                
-                self.ns.message = "Buy!"
+                self.buy.wait() 
+                try:
+                    buy_order = self.ns.buy_order_queue.pop()
+                    result, order_id, order = self.place_order(size=buy_order['size'],
+                                                               price=buy_order['price'],
+                                                               side=buy_order['order'],
+                                                               product_id=buy_order['product'],
+                                                               type=buy_order['type'])
+                    if result:
+                        self.ns.message = f"Buy order placed: {order_id}"
+                    else:
+                        self.ns.message = f"Buy order failed"
+                except (ValueError,IndexError):
+                    self.ns.message = "No buy order found in the queue..."
+                    pass
                 self.buy.clear()
 
         def _sell_loop():
             while not self.shutdown_event.is_set():
                 self.sell.wait()                
-                self.ns.message = "Sell!"
+                try:
+                    sell_order = self.ns.sell_order_queue.pop()
+                    result, order_id, order = self.place_order(size=sell_order['size'],
+                                                               price=sell_order['price'],
+                                                               side=sell_order['order'],
+                                                               product_id=sell_order['product'],
+                                                               type=sell_order['type'])                    
+                    if result:
+                        self.ns.message = f"Sell order placed: {order_id}"
+                    else:
+                        self.ns.message = f"Sell order failed"
+                except (ValueError,IndexError):
+                    self.ns.message = "No sell order found in the queue..."
+                    pass
                 self.sell.clear()
 
         def _cancel_loop():
             while not self.shutdown_event.is_set():
                 self.cancel.wait()                
-                self.ns.message = "Cancel!"
+                try:
+                    cancel = self.ns.cancel_order_queue.pop()
+                    self.ns.message = f"Cancelling order {cancel['order_id']}"
+                    result, extended_result = self.cancel_order(cancel['order_id'])
+                    if result:
+                        self.ns.message = ''
+                    else:
+                        self.ns.message = f"Cancel failed: {extended_result}"
+                except (ValueError,IndexError):
+                    self.ns.message = "No cancel order found in the queue..."
+                    pass
                 self.cancel.clear()
-                
+
         self.buy_thread = Thread(target=_buy_loop)
         self.buy_thread.start()
         self.sell_thread = Thread(target=_sell_loop)
@@ -69,45 +108,47 @@ class OrderHandler(object):
         self.shutdown_event.set()
         self.process.join()        
         
-    def buy_order(self,size,price,product_id):
-        result = self.place_order(size=size,price=price,side='buy',product_id=product_id)
-        return result
-    
-    def sell_order(self,size,price,product_id):
-        result = self.place_order(size=size,price=price,side='sell',product_id=product_id)
-        return result
+    def create_buy_order(self,size,price,product_id):
+        """Place an order on the queue for the _buy_loop thread in the main loop to consume"""
+        self.ns.buy_order_queue.append({'order':'buy','type':'market','product':product_id,'size':size,'price':price})
+        self.buy.set()
+
+    def create_sell_order(self,size,price,product_id):
+        """Place an order on the queue for the _sell_loop thread in the main loop to consume"""
+        self.ns.sell_order_queue.append({'order':'sell','type':'market','product':product_id,'size':size,'price':price})
+        self.sell.set()
+                
+    def create_cancel_order(self,order_id):
+        """Place an order on the queue for the _cancel_loop thread in the main loop to consume"""
+        self.ns.cancel_order_queue.append({'order':'cancel','order_id':order_id})
+        self.cancel.set()       
+
+    def place_order(self,size,price,side,product_id,type='market'):
+        """This method actually places the order via the authenticated_client
         
-    def place_order(self,size,price,side,product_id):
+        Will timeout if the order doesn't happen
+        """
         start_time = time.time()
         while True:
             now = time.time()
             if((now - start_time) > self.order_timeout):
                 return False
                 
-            # my_order = self.authenticated_client.place_order(type='limit',post_only=True,size=size, price=price, side=side, product_id=product_id)
-            my_order = self.authenticated_client.place_order(product_id=product_id,side=side,order_type='market',size=size,)
+            if type == 'market':                
+                my_order = self.authenticated_client.place_order(product_id=product_id,side=side,order_type=type,size=size,)
+            elif type == 'limit':
+                my_order = self.authenticated_client.place_order(type=type,post_only=True,size=size, price=price, side=side, product_id=product_id)
+            else:
+                self.ns.message = f"Order type unknown: {type}"
+                return False
             
             if('id' in my_order):
                 order_id = my_order['id']
-                return [order_id, my_order]
+                return True, order_id, my_order
             else:
                 if self.debug:
-                    with open('debug.txt','a+') as f:
-                        f.write(f"place_order: {my_order} - side: {side} size: {size} price: {price}\n")                
+                    debug_write("place_order: {my_order} - side: {side} size: {size} price: {price} type: {type}")
                 time.sleep(1)
-                
-    def cancel(self,order_id):
-        try:
-            canceled_order = self.authenticated_client.cancel_order(order_id)
-            if(canceled_order == order_id):
-                return True, "Order Cancelled"
-            else:
-                return False, canceled_order
-        except Exception as e:
-            if self.debug:
-                with open('debug.txt','a+') as f:
-                    f.write(f"Cancel Order Error - Order: {order_id}\nError: {traceback.format_exc()}\n")
-            return False         
             
     def get_order(self, order_timeout):
         for i in range(0,10):

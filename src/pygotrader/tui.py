@@ -174,11 +174,11 @@ class TerminalDisplay(object):
             
         if not self.view_mode:
             if char == ord('b'):
-                self.order_handler.buy_order(size=0.1,price=0.00,product_id=self.order_book.products)
+                self.order_handler.create_buy_order(size=0.1,price=1.00,product_id=self.order_book.products)
                 return
             
             if char == ord('s'):
-                self.order_handler.sell_order(size=0.1,price=0.00,product_id=self.order_book.products)
+                self.order_handler.create_sell_order(size=0.1,price=1.00,product_id=self.order_book.products)
                 return        
 
     def exit(self):
