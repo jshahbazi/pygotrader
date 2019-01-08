@@ -50,6 +50,7 @@ class PygoOrderBook(OrderBook):
         super().__init__(product_id=product_id)
         self.url = url
         self.ns = ns
+        self.has_started = False
 
     def on_message(self, message):
         super().on_message(message)
@@ -80,7 +81,7 @@ class PygoOrderBook(OrderBook):
         
     def _listen(self):
         """
-        Overriding the parent's parent (WebsocketClient) listen method
+        Overriding the grandparent's (WebsocketClient) listen method
         in order to calculate the order depth and copy the data to the 
         shared namespace for the TUI to display
         """
@@ -101,9 +102,10 @@ class PygoOrderBook(OrderBook):
             else:
                 self.on_message(msg)
 
+    def on_open(self):
+        super()
+        self.has_started = True
 
-
-                
     def add_my_order(self, order_id, order):
         self.ns.my_orders.update({order_id:order})
 
