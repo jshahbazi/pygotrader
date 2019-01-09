@@ -14,7 +14,7 @@ This program is currently not on pypi.org and requires a forked version of the c
 Note that this will override any existing installation of the coinbasepro-python library.
 
 ### Running the program
-To view only the current BTC-USD orders on Coinbase, you can simply run:
+To view only the current BTC-USD ask/bid spread on Coinbase, you can simply run:
 ```
  pygotrader
 ```
