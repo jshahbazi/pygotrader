@@ -123,8 +123,11 @@ def main():
             time.sleep(0.1)
 
 
-        mytui = tui.TerminalDisplay(ns, my_order_book, my_authenticated_client, my_order_handler)
-        curses.wrapper(mytui.display_loop)
+        # mytui = tui.TerminalDisplay(ns, my_order_book, my_authenticated_client, my_order_handler)
+        # curses.wrapper(mytui.display_loop)
+
+        mytui = tui.Menu(ns, my_order_book, my_authenticated_client, my_order_handler)
+        curses.wrapper(mytui.start)
     
         
     except CustomExit:
