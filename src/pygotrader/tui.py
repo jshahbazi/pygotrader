@@ -84,7 +84,7 @@ class TerminalDisplay(object):
                 if user_keypress == -1:
                     pass
                 else:
-                    self.ns.message = str(user_keypress)
+                    # self.ns.message = str(user_keypress)
                     key = chr(user_keypress)
                     if self.menu_mode == 'normal':
                         self.keypress(key)
@@ -133,7 +133,8 @@ class TerminalDisplay(object):
                 self.menu = f"Type in amount and press <Enter>: {self.user_input}"
             elif self.menu_mode == 'sell-amount':
                 self.menu = f"Type in amount and press <Enter>: {self.user_input}"
-        
+            elif self.menu_mode == 'cancel-order':
+                self.menu = f"Type in order number and press <Enter> to cancel: {self.user_input}"        
         
     def draw(self):
         self.win.erase()
@@ -200,7 +201,7 @@ class TerminalDisplay(object):
         elif not self.view_mode:
             if self.menu_mode == 'normal':
                 if input == 'c':
-                    # self.menu_mode = 'buy-amount'
+                    self.menu_mode = 'cancel-order'
                     self.ns.message = 'Cancel has not been implemented yet...'
                     return
                 if input == 'b':
@@ -225,6 +226,16 @@ class TerminalDisplay(object):
                 amount = float(input)
                 self.order_handler.create_sell_order(size=amount,price=0.00,product_id=self.order_book.products)                
                 self.menu_mode = 'normal'
+            elif self.menu_mode == 'cancel-order':
+                if input == '':
+                    self.menu_mode = 'normal'
+                    return
+                elif input.isdigit():
+                    order_number = int(input)
+                    self.menu_mode = 'normal'
+                else:
+                    self.ns.message = 'Bad input'
+                    self.menu_mode = 'normal'
                 
     def exit(self):
         self.win.erase()
