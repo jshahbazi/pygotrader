@@ -1,11 +1,10 @@
-import curses
-import time
+import curses, math, time
 from pygotrader import cli
 
 class Menu(object):
     """The main TUI interface.  Objects are passed here from the main cli 
     function and updated either on their own or through shared memory (the 
-    manager namespace).  This is built on the curses library.
+    manager namespace).  This is built on the python curses library.
     
     The menu goes through several modes depending on the current state.  normal
     and view modes only accept single character inputs for menu choices.  The
@@ -54,13 +53,15 @@ class Menu(object):
         self.win = None
         self.input_command = ''
         self.refresh_time = 0.1
-        self.display_max_asks = 5
-        self.display_max_bids = 5
+        self.askbid_spread_size = 5
+        self.stdscr = None
+        self.height = 0
+        self.width = 0
 
     def start(self, stdscr):
         if self.authenticated_client:
             self.change_mode('normal')
-        self.initialize_menu()
+        self.initialize_askbid_spread()
         self.initialize_curses(stdscr)
         self.win = curses.newwin(self.height, self.width, 0, 0)
         self.main_loop()
@@ -73,7 +74,7 @@ class Menu(object):
         
     def initialize_curses(self, stdscr):
         self.stdscr = stdscr
-        self.height,self.width = stdscr.getmaxyx()
+        self.calculate_size()
         self.stdscr.erase()
         self.stdscr.refresh()
         curses.use_default_colors()
@@ -85,12 +86,22 @@ class Menu(object):
         curses.noecho()
         curses.halfdelay(5)        
 
-    def initialize_menu(self):
-        for x in range(0,self.display_max_asks):
-            self.ns.ui_asks.insert(x,{'price':0.00,'depth':0.00})        
-        for x in range(0,self.display_max_bids):
-            self.ns.ui_bids.insert(x,{'price':0.00,'depth':0.00})         
+    # def initialize_askbid_spread(self):
+    #     current_asks_size = len(self.ns.ui_asks)
+    #     if current_asks_size < self.askbid_spread_size:
+    #         for x in range(current_asks_size,self.askbid_spread_size):
+    #             self.ns.ui_asks.insert(x,{'price':0.00,'depth':0.00})  
+    #     current_bids_size = len(self.ns.ui_bids)
+    #     if current_bids_size < self.askbid_spread_size:                
+    #         for x in range(current_bids_size,self.askbid_spread_size):
+    #             self.ns.ui_bids.insert(x,{'price':0.00,'depth':0.00})         
 
+    def initialize_askbid_spread(self):
+        for x in range(0,self.askbid_spread_size):
+            self.ns.ui_asks.insert(x,{'price':0.00,'depth':0.00})  
+        for x in range(0,self.askbid_spread_size):
+            self.ns.ui_bids.insert(x,{'price':0.00,'depth':0.00})  
+    
     def main_loop(self):
         while True:
             try:
@@ -108,6 +119,12 @@ class Menu(object):
         self.draw_main_window()
         self.win.refresh()
         curses.curs_set(1)
+        
+    def calculate_size(self):
+        self.height,self.width = self.stdscr.getmaxyx()
+        # self.askbid_spread_size = math.floor((0.8 * self.height) / 2.0)
+        # self.order_book.update_askbid_spread_size(self.askbid_spread_size)
+        # self.ns.askbid_spread_size = self.askbid_spread_size
 
     def assemble_menu_information(self):
         self.product = self.order_book.products
@@ -142,6 +159,10 @@ class Menu(object):
         keypress = self.win.getch()
         if keypress == -1:
             return
+        
+        if keypress == curses.KEY_RESIZE:
+            self.calculate_size()
+            # self.ns.message = f"{self.height},{self.width}"
 
         key = chr(keypress)        
         if self.mode in ['normal','view']:
@@ -204,42 +225,44 @@ class Menu(object):
                 
                 
     def draw_main_window(self):
-        try:
-            self.win.addstr(0,0,'Product\t\tBalances\t\t\t\t\t\t\t\t  Ask/Bid     Ask/Bid Depth', curses.A_BOLD)
-            self.win.addstr(1,0,f"{self.product}")
-            if self.mode != 'view':
-                self.win.addstr("\t\tUSD:  ")    
-                self.win.addstr("{:>10.2f}".format(self.my_balances['USD']), curses.color_pair(1)) 
-                self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
-                self.win.addstr("{:>10.9f}".format(self.my_balances[self.product]), curses.color_pair(1))
+        # try:
+            if self.height > 3:
+                self.win.addstr(0,0,'Product\t\tBalances\t\t\t\t\t\t\t\t  Ask/Bid     Ask/Bid Depth', curses.A_BOLD)
+                self.win.addstr(1,0,f"{self.product}")
+                if self.mode != 'view':
+                    self.win.addstr("\t\tUSD:  ")    
+                    self.win.addstr("{:>10.2f}".format(self.my_balances['USD']), curses.color_pair(1)) 
+                    self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
+                    self.win.addstr("{:>10.9f}".format(self.my_balances[self.product]), curses.color_pair(1))
+    
+                self.win.addstr(1, 60, "Highest Bid: {:.2f}".format(self.highest_bid))
+                self.win.addstr(2, 60, "Last Match: {:.2f}".format(self.last_match))
 
-            self.win.addstr(1, 60, "Highest Bid: {:.2f}".format(self.highest_bid))
-            self.win.addstr(2, 60, "Last Match: {:.2f}".format(self.last_match))
-    
-            for idx,ask in enumerate(self.asks):
-                self.win.addstr(1+idx,90,"{:.2f}\t{:.2f}".format(self.asks[(self.display_max_asks-1)-idx]['price'],self.asks[(self.display_max_asks-1)-idx]['depth']), curses.color_pair(3))
-    
-            for idx,bid in enumerate(self.bids):
-                self.win.addstr(6+idx, 90,"{:.2f}\t{:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
+            if self.height > (self.askbid_spread_size * 2):
+                for idx,ask in enumerate(reversed(self.asks)):
+                    self.win.addstr(1+idx,90,"{:.2f}\t{:.2f}".format(ask['price'],ask['depth']), curses.color_pair(3))
         
-            self.win.addstr(4, 0, 'Orders:', curses.A_BOLD)
-            self.win.addstr(5, 0, 'ID  Product  Side  Type    Price    Remaining Size', curses.A_BOLD)
+                
+                for idx,bid in enumerate(self.bids):
+                    self.win.addstr(6+idx, 90,"{:.2f}\t{:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
             
-            if self.my_orders:
-                for idx,order in enumerate(self.my_orders):
-                    if(idx <= 4):
-                        if('product_id' in order):
-                            self.win.addstr(10+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
-                            if(order['side'] == 'buy'):
-                                self.win.addstr("{}".format(order['side']), curses.color_pair(1))
-                            else:
-                                self.win.addstr("{}".format(order['side']), curses.color_pair(2))
-                            self.win.addstr("  {}   {:.2f}    {:.9f}".format(order['type'],float(order['price']),float(order['size'])))
+                self.win.addstr(4, 0, 'Orders:', curses.A_BOLD)
+                self.win.addstr(5, 0, 'ID  Product  Side  Type    Price    Remaining Size', curses.A_BOLD)
+                
+                if self.my_orders:
+                    for idx,order in enumerate(self.my_orders):
+                        if(idx <= 4):
+                            if('product_id' in order):
+                                self.win.addstr(10+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
+                                if(order['side'] == 'buy'):
+                                    self.win.addstr("{}".format(order['side']), curses.color_pair(1))
+                                else:
+                                    self.win.addstr("{}".format(order['side']), curses.color_pair(2))
+                                self.win.addstr("  {}   {:.2f}    {:.9f}".format(order['type'],float(order['price']),float(order['size'])))
             
-            self.win.addstr(self.height-3, 0, 'Message: {}'.format(self.message))
-                  
-            # self.win.addstr(self.height-2, 0, "{}".format(status_message))
+            if self.height > 6:
+                self.win.addstr(self.height-3, 0, 'Message: {}'.format(self.message))
 
             self.win.addstr(self.height-1, 0, self.menu)
-        except curses.error:
-            raise cli.CustomExit                
+        # except curses.error:
+        #     raise cli.CustomExit
