@@ -97,7 +97,6 @@ class Menu(object):
                 self.draw()
                 self.get_input()
                 time.sleep(self.refresh_time)
-                self.stdscr.erase()
             except KeyboardInterrupt:
                 self.exit()
 
