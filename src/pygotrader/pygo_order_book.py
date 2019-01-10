@@ -26,7 +26,7 @@ class ExchangeMessage(object):
         self.size = msg["size"] if 'size' in msg else None
 
     def __str__(self):
-        print_out = f"{self.sequence}"
+        print_out = f"ExchangeMessageObject: {self.sequence} {self.side} {self.product_id} {self.size} @ {self.price}"
         return print_out
         
         
@@ -60,10 +60,10 @@ class PygoOrderBook(OrderBook):
     def match(self, order):
         super().match(order)
         message_object = ExchangeMessage(order)
-        # self.ns.exchange_order_matches.append(message_object)   
+        self.ns.exchange_order_matches.append(message_object)
         self.ns.last_match = message_object.price
 
-    def calculate_order_depth(self,max_asks=5,max_bids=5):
+    def calculate_order_depth(self,max_asks=10,max_bids=10):
         for x in range(0,max_asks):
             price = self._asks.iloc[x]
             depth = sum(a['size'] for a in self._asks[price])

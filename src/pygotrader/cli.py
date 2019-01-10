@@ -46,6 +46,9 @@ def create_namespace(my_manager):
     ns.message = ''
     ns.ui_asks = my_manager.list()
     ns.ui_bids = my_manager.list()
+    for x in range(0,10):
+        ns.ui_asks.insert(x,{'price':0.00,'depth':0.00})  
+        ns.ui_bids.insert(x,{'price':0.00,'depth':0.00})       
     return ns
 
 
@@ -122,13 +125,9 @@ def main():
         while not my_order_book.has_started:
             time.sleep(0.1)
 
-
-        # mytui = tui.TerminalDisplay(ns, my_order_book, my_authenticated_client, my_order_handler)
-        # curses.wrapper(mytui.display_loop)
-
         mytui = tui.Menu(ns, my_order_book, my_authenticated_client, my_order_handler)
         curses.wrapper(mytui.start)
-    
+
         
     except CustomExit:
         pass
