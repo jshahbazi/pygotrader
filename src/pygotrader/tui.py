@@ -144,8 +144,12 @@ class Menu(object):
         if keypress == curses.KEY_RESIZE:
             self.calculate_size()
 
-        key = chr(keypress)        
-        if self.mode in ['normal','view']:
+        key = (chr(keypress)).lower()
+        if self.mode == 'normal':
+            self.menu_choice(key)
+        elif self.mode == 'view':
+            if key != 'q':
+                return
             self.menu_choice(key)
         elif self.mode in ['buy_amount','sell_amount','cancel_order']:
             if keypress in [10,'\n','\r']: #10 is line-feed
