@@ -2,7 +2,7 @@ import json, os, signal, time, traceback
 import curses
 import cbpro
 import multiprocessing
-from pygotrader import arguments,config, order_handler, pygo_order_book, tui, algo
+from pygotrader import arguments,config, order_handler, pygo_order_book, tui#, algo
 
 
 class CustomExit(Exception):
