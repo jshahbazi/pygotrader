@@ -52,7 +52,7 @@ class Menu(object):
         self.my_orders = []
         self.win = None
         self.input_command = ''
-        self.refresh_time = 0.1
+        self.refresh_time = 0.03
         self.askbid_spread_size = 5
         self.stdscr = None
         self.height = 0
@@ -163,19 +163,19 @@ class Menu(object):
     def change_mode(self,mode):
         if mode == 'normal':
             self.mode = 'normal'
-            self.refresh_time = 0.1
+            self.refresh_time = 0.03
         elif mode == 'view':
             self.mode = 'view'
-            self.refresh_time = 0.1            
+            self.refresh_time = 0.03           
         elif mode == 'buy_amount':
             self.mode = 'buy_amount'
-            self.refresh_time = 0.05
+            self.refresh_time = 0.01
         elif mode == 'sell_amount':
             self.mode = 'sell_amount'
-            self.refresh_time = 0.05
+            self.refresh_time = 0.01
         elif mode == 'cancel_order':
             self.mode = 'cancel_order'
-            self.refresh_time = 0.05
+            self.refresh_time = 0.01
 
     def menu_choice(self, input):
         if input == 'b':
