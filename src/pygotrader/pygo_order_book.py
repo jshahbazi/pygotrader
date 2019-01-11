@@ -1,10 +1,8 @@
 from cbpro.order_book import OrderBook
 from sortedcontainers import SortedDict
 from decimal import Decimal
-import pickle
 import time
 import datetime as dt
-from itertools import islice
 from threading import Thread
 import json
 import multiprocessing
