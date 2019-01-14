@@ -2,7 +2,7 @@ import json, os, signal, time, traceback
 import curses
 import cbpro
 import multiprocessing
-from pygotrader import arguments,config, order_handler, pygo_order_book, tui#, algo
+from pygotrader import arguments,config, order_handler, pygo_order_book, tui, algorithm_handler
 
 
 class CustomExit(Exception):
@@ -122,8 +122,8 @@ def main():
         my_order_handler = order_handler.OrderHandler(my_authenticated_client,ns)
         my_order_handler.start()
         
-        # my_algo_runner = algo.Algo(ns, my_order_book, my_authenticated_client)
-        # my_algo_runner.start()
+        my_algo_runner = algorithm_handler.AlgorithmHandler(ns, my_authenticated_client, my_order_handler)
+        my_algo_runner.start()
         
         while not my_order_book.has_started:
             time.sleep(0.1)
@@ -133,7 +133,7 @@ def main():
 
         
     except CustomExit:
-        # my_algo_runner.close()
+        my_algo_runner.close()
         my_order_book.close()
         my_order_handler.close()
         

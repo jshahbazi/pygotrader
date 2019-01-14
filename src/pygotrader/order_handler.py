@@ -108,14 +108,26 @@ class OrderHandler(object):
         self.shutdown_event.set()
         self.process.join()        
         
-    def create_buy_order(self,size,price,product_id):
+    def create_buy_order(self,size,price,product_id,type='market'):
         """Place an order on the queue for the _buy_loop thread in the main loop to consume"""
-        self.ns.buy_order_queue.append({'order':'buy','type':'market','product':product_id,'size':size,'price':price})
+        if type == 'market':
+            self.ns.buy_order_queue.append({'order':'buy','type':'market','product':product_id,'size':size,'price':price})
+        elif type == 'limit':
+            self.ns.buy_order_queue.append({'order':'buy','type':'limit','product':product_id,'size':size,'price':price})
+        else:
+            self.ns.message = "Error in buy order type"
+            return
         self.buy.set()
 
-    def create_sell_order(self,size,price,product_id):
+    def create_sell_order(self,size,price,product_id,type='market'):
         """Place an order on the queue for the _sell_loop thread in the main loop to consume"""
-        self.ns.sell_order_queue.append({'order':'sell','type':'market','product':product_id,'size':size,'price':price})
+        if type == 'market':
+            self.ns.sell_order_queue.append({'order':'sell','type':'market','product':product_id,'size':size,'price':price})
+        elif type == 'limit':
+            self.ns.sell_order_queue.append({'order':'sell','type':'limit','product':product_id,'size':size,'price':price})
+        else:
+            self.ns.message = "Error in sell order type"
+            return
         self.sell.set()
                 
     def create_cancel_order(self,order_id):
