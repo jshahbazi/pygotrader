@@ -62,11 +62,15 @@ class PygoOrderBook(OrderBook):
         self.ns.last_match = message_object.price
 
     def calculate_order_depth(self,max_asks=10,max_bids=10):
+        if len(self._asks) < max_asks:
+            max_asks = len(self._asks)
         for x in range(0,max_asks):
             price = self._asks.iloc[x]
             depth = sum(a['size'] for a in self._asks[price])
             self.ns.ui_asks[x] = {'price':price,'depth':depth}
 
+        if len(self._bids) < max_bids:
+            max_bids = len(self._bids)
         i=0
         for bid in reversed(self._bids):
             if i == max_bids:
@@ -99,10 +103,15 @@ class PygoOrderBook(OrderBook):
                 self.on_error(e)
             else:
                 self.on_message(msg)
+        self.ns.message = "Websocket connection has been closed..."
 
     def on_open(self):
         super()
         self.has_started = True
+        
+    def on_close(self):
+        super()
+        self.has_started = False
 
     def add_my_order(self, order_id, order):
         self.ns.my_orders.update({order_id:order})
