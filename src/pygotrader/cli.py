@@ -101,15 +101,19 @@ def main():
     """
     my_manager = multiprocessing.Manager()
     ns = create_namespace(my_manager)
+    view_mode = True
     
     try:
     
         argument_parser = arguments.create_parser()
         args = argument_parser.parse_args()
+        if args.config:
+            view_mode = False
+
 
         my_config = config.MyConfig(exchange=args.exchange,product=args.product)
-        
-        if args.config:
+
+        if not view_mode:
             my_config.load_config(args.config)
             my_authenticated_client = my_config.get_coinbase_authenticated_client()
         else:
@@ -122,8 +126,9 @@ def main():
         my_order_handler = order_handler.OrderHandler(my_authenticated_client,ns)
         my_order_handler.start()
         
-        my_algo_runner = algorithm_handler.AlgorithmHandler(ns, my_authenticated_client, my_order_handler)
-        my_algo_runner.start()
+        if not view_mode:
+            my_algo_runner = algorithm_handler.AlgorithmHandler(ns, my_authenticated_client, my_order_handler)
+            my_algo_runner.start()
         
         while not my_order_book.has_started:
             time.sleep(0.1)
@@ -133,7 +138,8 @@ def main():
 
         
     except CustomExit:
-        my_algo_runner.close()
+        if not view_mode:
+            my_algo_runner.close()
         my_order_book.close()
         my_order_handler.close()
         
