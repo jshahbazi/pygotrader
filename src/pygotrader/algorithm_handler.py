@@ -31,6 +31,7 @@ class AlgorithmHandler(object):
         self.event = multiprocessing.Event()
         self.algorithm_file = algorithm_file
         self.algorithm_reload_time = 10
+        self.algorithm_run_rate = 0.1
 
     def start(self):
         self.process = multiprocessing.Process(target=self.main_loop, args=(self.ns,self.shutdown_event))
@@ -57,7 +58,8 @@ class AlgorithmHandler(object):
                     self.ns.message = f"Algorithm reloaded in {reload_time} seconds"
 
             try:
-                algorithm.trading_algorithm(ns=self.ns,order_handler=self.order_handler)  #user made algorithm
+                algorithm.trading_algorithm(ns=self.ns,order_handler=self.order_handler,matches=self.ns.exchange_order_matches)  #user made algorithm
+                time.sleep(self.algorithm_run_rate)
             except Exception as e:
                 self.ns.message = f"Error in {self.algorithm_file}.  Please see algorithm_error.txt for more details."
                 with open("algorithm_error.txt","w") as f:

@@ -17,23 +17,23 @@ from pygotrader import order_handler
 import datetime
 
 
-def trading_algorithm(ns, order_handler, asks=None, bids=None):
+def trading_algorithm(ns, order_handler, asks=None, bids=None, matches=None):
     rolling_window = 10
 
-    length = len(ns.exchange_order_matches)
+    length = len(matches)
     now = datetime.datetime.utcnow()
     i=0
     while i <= (length -1): #TODO speed this while loop up.  Currently averaging around 0.004s
-        start = ns.exchange_order_matches[i].time
+        start = matches[i].time
         if start < (now - datetime.timedelta(seconds=rolling_window)):
-             del ns.exchange_order_matches[i]
+             del matches[i]
              i=-1
-             length = len(ns.exchange_order_matches)
+             length = len(matches)
         else:
             break
         i+=1
-        
-    current_matches = ns.exchange_order_matches    
+    # ns.message = f"Matches length: A {len(matches)}"    
+    current_matches = matches    
     
     
     list_size = len(current_matches)
@@ -44,7 +44,8 @@ def trading_algorithm(ns, order_handler, asks=None, bids=None):
     for i in x:
         y.append(current_matches[i].price)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
-    ns.message = f"Slope: {slope}"
+    # ns.message = f"Slope: {slope}"
+    
     
     if(slope > 0.1): 
         ns.message = f"Slope: {slope} - Buy"
@@ -52,3 +53,4 @@ def trading_algorithm(ns, order_handler, asks=None, bids=None):
     elif(slope < -0.1):
         ns.message = f"Slope: {slope} - Sell"
         # order_handler.create_sell_order(size=0.01,price=0.00,product_id='BTC-USD',type='market')
+        

@@ -78,8 +78,6 @@ def main():
     TODO:
      - Add the ability to create external config class via an install function 
      or some kind of config function within the tui or cli
-     - Separate processes running algorithms to buy/sell
-     - Ability for user to write their own algorithm
      - Rewrite cbpro library to use websockets instead of websocket-client library
     """
     

@@ -226,7 +226,7 @@ class Menu(object):
             live_data_start_col = int(width_multiplier*self.width)
             askbid_start_col = live_data_start_col + 25
             
-            if self.height > 3: #42 15
+            if self.height > 3:
                 self.win.addstr(0,0,'Product\t\tBalances', curses.A_BOLD)
                 self.win.addstr(0,askbid_start_col,'Ask/Bid    Ask/Bid Depth', curses.A_BOLD)
                 self.win.addstr(1,0,f"{self.product}")
