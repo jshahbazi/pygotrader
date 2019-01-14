@@ -85,9 +85,17 @@ class Menu(object):
         curses.noecho()
         curses.halfdelay(5)        
 
+    def check_order_book(self):
+        if(not self.order_book):
+            self.win.erase()
+            self.win.addstr(self.height-3, 0, 'Message: OrderBook has failed to connect...')
+            time.sleep(3)
+            self.exit()     
+
     def main_loop(self):
         while True:
             try:
+                self.check_order_book()
                 self.draw()
                 self.get_input()
                 time.sleep(self.refresh_time)
@@ -236,22 +244,24 @@ class Menu(object):
                     index = 1 + self.askbid_spread_size + idx
                     self.win.addstr(index, 90,"{:.2f}\t{:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
             
-                if self.my_orders:
-                    for idx,order in enumerate(self.my_orders):
-                        if(idx <= 4):
-                            if('product_id' in order):
-                                self.win.addstr(10+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
-                                if(order['side'] == 'buy'):
-                                    self.win.addstr("{}".format(order['side']), curses.color_pair(1))
-                                else:
-                                    self.win.addstr("{}".format(order['side']), curses.color_pair(2))
-                                self.win.addstr("  {}   {:.2f}    {:.9f}".format(order['type'],float(order['price']),float(order['size'])))
-
             if self.height > 5:
                 self.win.addstr(4, 0, 'Orders:', curses.A_BOLD)
                 self.win.addstr(5, 0, 'ID  Product  Side  Type    Price    Remaining Size', curses.A_BOLD)
             
             if self.height > 6:
+                if self.my_orders:
+                    for idx,order in enumerate(self.my_orders):
+                        if(self.height > 6 + idx + 1):
+                            if('product_id' in order):
+                                self.win.addstr(6+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
+                                if(order['side'] == 'buy'):
+                                    self.win.addstr("{}".format(order['side']), curses.color_pair(1))
+                                else:
+                                    self.win.addstr("{}".format(order['side']), curses.color_pair(2))
+                                self.win.addstr("  {}   {:.2f}    {:.9f}".format(order['type'],float(order['price']),float(order['size'])))
+                else:
+                    self.win.addstr(6, 0, "Order display not currently implemented...", curses.color_pair(4))
+                    
                 self.win.addstr(self.height-3, 0, 'Message: {}'.format(self.message))
 
             self.win.addstr(self.height-1, 0, self.menu)
