@@ -151,6 +151,7 @@ class Menu(object):
         
         if keypress == curses.KEY_RESIZE:
             self.calculate_size()
+            self.ns.message = f"{self.height},{self.width}"
 
         key = (chr(keypress)).lower()
         if self.mode == 'normal':
@@ -218,31 +219,39 @@ class Menu(object):
                 
     def draw_main_window(self):
         try:
-            if self.height > 3:
-                self.win.addstr(0,0,'Product\t\tBalances\t\t\t\t\t\t\t\t  Ask/Bid     Ask/Bid Depth', curses.A_BOLD)
+            if self.width >= 85:
+                width_multiplier = 0.5
+            else:
+                width_multiplier = 0.4
+            live_data_start_col = int(width_multiplier*self.width)
+            askbid_start_col = live_data_start_col + 25
+            
+            if self.height > 3: #42 15
+                self.win.addstr(0,0,'Product\t\tBalances', curses.A_BOLD)
+                self.win.addstr(0,askbid_start_col,'Ask/Bid    Ask/Bid Depth', curses.A_BOLD)
                 self.win.addstr(1,0,f"{self.product}")
                 if self.mode != 'view':
                     self.win.addstr("\t\tUSD:  ")    
                     self.win.addstr("{:>10.2f}".format(self.my_balances['USD']), curses.color_pair(1)) 
                     self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
                     self.win.addstr("{:>10.9f}".format(self.my_balances[self.product]), curses.color_pair(1))
-    
-                self.win.addstr(1, 60, "Highest Bid: {:.2f}".format(self.highest_bid))
-                self.win.addstr(2, 60, "Last Match: {:.2f}".format(self.last_match))
+        
+                self.win.addstr(1, live_data_start_col, "Highest Bid: {:.2f}".format(self.highest_bid))
+                self.win.addstr(2, live_data_start_col, "Last Match: {:.2f}".format(self.last_match))
 
             if self.height > (self.askbid_spread_size * 2 + 1):
                 max_asks = self.askbid_spread_size
                 for idx,ask in enumerate(self.asks):
                     if idx == max_asks:
                         break                    
-                    self.win.addstr(1+idx,90,"{:.2f}\t{:.2f}".format(self.asks[(max_asks-1)-idx]['price'],self.asks[(max_asks-1)-idx]['depth']), curses.color_pair(3))
+                    self.win.addstr(1+idx,askbid_start_col,"{:.2f}      {:.2f}".format(self.asks[(max_asks-1)-idx]['price'],self.asks[(max_asks-1)-idx]['depth']), curses.color_pair(3))
         
                 max_bids = self.askbid_spread_size
                 for idx,bid in enumerate(self.bids):
                     if idx == max_bids:
                         break
                     index = 1 + self.askbid_spread_size + idx
-                    self.win.addstr(index, 90,"{:.2f}\t{:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
+                    self.win.addstr(index,askbid_start_col,"{:.2f}      {:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
             
             if self.height > 5:
                 self.win.addstr(4, 0, 'Orders:', curses.A_BOLD)
