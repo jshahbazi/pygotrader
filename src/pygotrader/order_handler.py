@@ -147,9 +147,9 @@ class OrderHandler(object):
                 return False
                 
             if type == 'market':                
-                my_order = self.authenticated_client.place_order(product_id=product_id,side=side,order_type=type,size=size,)
+                my_order = self.authenticated_client.place_order(product_id=product_id,side=side,order_type=type,size=size)
             elif type == 'limit':
-                my_order = self.authenticated_client.place_order(type=type,post_only=True,size=size, price=price, side=side, product_id=product_id)
+                my_order = self.authenticated_client.place_order(product_id=product_id,side=side,order_type=type,size=size,post_only=True,price=price)
             else:
                 self.ns.message = f"Order type unknown: {type}"
                 return False
@@ -171,4 +171,4 @@ class OrderHandler(object):
                 time.sleep(1)
                 continue
                 
-        raise ValueError("(OrderHandler.get_order) Unknown error: Order ID not being returned.")        
+        raise ValueError("(OrderHandler.get_order) Unknown error: Order ID not being returned.")
