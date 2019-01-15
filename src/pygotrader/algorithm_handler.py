@@ -55,7 +55,7 @@ class AlgorithmHandler(object):
                     reload(algorithm)
                     algo_last_modified = algo_current_modified
                     reload_time = datetime.datetime.utcnow() - now
-                    self.ns.message = f"Algorithm reloaded in {reload_time} seconds"
+                    self.ns.message = f"Algorithm reloaded in {reload_time.total_seconds()} seconds"
 
             try:
                 algorithm.trading_algorithm(ns=self.ns,order_handler=self.order_handler,matches=self.ns.exchange_order_matches)  #user made algorithm
