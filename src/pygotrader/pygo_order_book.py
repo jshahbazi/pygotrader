@@ -99,11 +99,29 @@ class PygoOrderBook(OrderBook):
                 msg = json.loads(data)
             except ValueError as e:
                 self.on_error(e)
+                self.ns.message = f"Websocket connection has been closed. Error: {e}"
+                return 'error'
             except Exception as e:
                 self.on_error(e)
+                self.ns.message = f"Websocket connection has been closed. Error: {e}"
+                return 'error'
             else:
                 self.on_message(msg)
-        self.ns.message = "Websocket connection has been closed..."
+
+    def start(self):
+        def _go():
+            while not self.shutdown_event.is_set():
+                self._connect()
+                self.keepalive = Thread(target=self._keepalive)
+                result = self._listen()
+                if result == 'error':
+                    self.ns.message = 'Restarting websocket...'
+                else:
+                    self._disconnect()
+
+        self.on_open()
+        self.thread = multiprocessing.Process(target=_go)
+        self.thread.start()
 
     def on_open(self):
         super()
@@ -112,6 +130,9 @@ class PygoOrderBook(OrderBook):
     def on_close(self):
         super()
         self.has_started = False
+        
+    def on_error(self, e, data=None):
+        self.error = e        
 
     def add_my_order(self, order_id, order):
         self.ns.my_orders.update({order_id:order})
