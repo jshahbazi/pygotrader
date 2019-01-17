@@ -63,7 +63,7 @@ properly.  This will be remedied in a future release. For now, use the websocket
 regular Coinbase Pro exchange: wss://ws-feed.pro.coinbase.com
 
 ### Custom trading algorithm
-While the program offers buying and selling via menu commands, there is also the ability to trade automatically via a custom algorithm.  The algorithm can use any Python library and can call any outside program or API.  There are no limits except for the initial function call.  A sample algorithm that uses linear regression is included as an example.
+While the program offers buying and selling via menu commands, there is also the ability to trade automatically via a custom algorithm.  The algorithm can use any Python library and can call any outside program or API.  There are no limits to what kind of code can be added except for the initial function call, as that is called by the AlgorithmHandler class.  A sample algorithm that uses linear regression is included as an example, and will be copied over for the user if the --algorithm_file argument is not present and there is no algorithm.py file in the current directory.
 
 ### Uninstall
 ```
