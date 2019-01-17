@@ -48,6 +48,7 @@ class OrderHandler(object):
                                                                type=buy_order['type'])
                     if result:
                         self.ns.message = f"Buy order placed: {order_id}"
+                        self.load_my_orders()
                     else:
                         self.ns.message = f"Buy order failed"
                 except (ValueError,IndexError):
@@ -67,6 +68,7 @@ class OrderHandler(object):
                                                                type=sell_order['type'])                    
                     if result:
                         self.ns.message = f"Sell order placed: {order_id}"
+                        self.load_my_orders()
                     else:
                         self.ns.message = f"Sell order failed"
                 except (ValueError,IndexError):
@@ -83,13 +85,21 @@ class OrderHandler(object):
                     result, extended_result = self.cancel_order(cancel['order_id'])
                     if result:
                         self.ns.message = ''
+                        self.load_my_orders()
                     else:
                         self.ns.message = f"Cancel failed: {extended_result}"
                 except (ValueError,IndexError):
                     self.ns.message = "No cancel order found in the queue..."
                     pass
                 self.cancel.clear()
+                
+        def _order_checker():
+            while not self.shutdown_event.is_set():
+                self.load_my_orders()
+                time.sleep(10)
 
+        self.order_checker_thread = Thread(target=_order_checker)
+        self.order_checker_thread.start()
         self.buy_thread = Thread(target=_buy_loop)
         self.buy_thread.start()
         self.sell_thread = Thread(target=_sell_loop)
@@ -99,6 +109,10 @@ class OrderHandler(object):
         
         self.shutdown_event.wait()
         
+    def load_my_orders(self):
+        my_orders = self.authenticated_client.get_orders()
+        for order in my_orders:
+            self.create_or_update_my_order(order)
 
     def start(self):
         self.process = multiprocessing.Process(target=self.main_loop)
@@ -110,13 +124,13 @@ class OrderHandler(object):
         
     def create_buy_order(self,size,price,product_id,type='market'):
         """Place an order on the queue for the _buy_loop thread in the main loop to consume"""
-        if type == 'market':
-            self.ns.buy_order_queue.append({'order':'buy','type':'market','product':product_id,'size':size,'price':price})
-        elif type == 'limit':
-            self.ns.buy_order_queue.append({'order':'buy','type':'limit','product':product_id,'size':size,'price':price})
-        else:
-            self.ns.message = "Error in buy order type"
-            return
+        # if type == 'market':
+        #     self.ns.buy_order_queue.append({'order':'buy','type':'market','product':product_id,'size':size,'price':price})
+        # elif type == 'limit':
+        self.ns.buy_order_queue.append({'order':'buy','type':'limit','product':product_id,'size':size,'price':price})
+        # else:
+        #     self.ns.message = "Error in buy order type"
+        #     return
         self.buy.set()
 
     def create_sell_order(self,size,price,product_id,type='market'):
@@ -172,3 +186,11 @@ class OrderHandler(object):
                 continue
                 
         raise ValueError("(OrderHandler.get_order) Unknown error: Order ID not being returned.")
+        
+    def create_or_update_my_order(self, my_order):
+        self.ns.my_orders[my_order['id']] = {'product_id':my_order['product_id'],
+                                            'side':my_order['side'],
+                                            'type':my_order['type'],
+                                            'price':my_order['price'],
+                                            'size':my_order['size'],
+                                            'status':my_order['status']}
