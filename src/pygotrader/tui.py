@@ -82,10 +82,10 @@ class Menu(object):
         self.stdscr.refresh()
         curses.use_default_colors()
         curses.start_color()
-        curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
-        curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
-        curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-        curses.init_pair(4, curses.COLOR_CYAN, curses.COLOR_BLACK)
+        curses.init_pair(1, curses.COLOR_GREEN, -1)
+        curses.init_pair(2, curses.COLOR_RED, -1)
+        curses.init_pair(3, curses.COLOR_YELLOW, -1)
+        curses.init_pair(4, curses.COLOR_CYAN, -1)
         curses.noecho()
         curses.halfdelay(5)        
 
@@ -320,7 +320,7 @@ class Menu(object):
                     
                 self.win.addstr(self.height-3, 0, 'Message: {}'.format(self.message))
                 if self.algorithm_handler != None:
-                    self.win.addstr(self.height-2, 0, 'Automated trading enabled')
+                    self.win.addstr(self.height-2, 0, 'Automated trading enabled', curses.A_BOLD)
             self.win.addstr(self.height-1, 0, self.menu)
         except curses.error:
             raise cli.CustomExit
