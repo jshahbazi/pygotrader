@@ -1,9 +1,9 @@
-import json, os, signal, time, traceback
+import json, os, signal, time, traceback,shutil
 import curses
 import cbpro
 import multiprocessing
 from pygotrader import arguments,config, order_handler, pygo_order_book, tui, algorithm_handler
-
+from pkg_resources import Requirement, resource_filename
 
 class CustomExit(Exception):
     """Custom class to exit program"""
@@ -114,6 +114,12 @@ def main():
         if not view_mode:
             my_config.load_config(args.config)
             my_authenticated_client = my_config.get_coinbase_authenticated_client()
+            
+            if not os.path.exists(args.algorithm_file):
+                filename = resource_filename(Requirement.parse("pygotrader"),"pygotrader/algorithm.py")
+                print(f"Copying sample algorithm file to ./algorithm.py...")
+                shutil.copyfile(filename,"./algorithm.py")
+                time.sleep(2)                
         else:
             my_authenticated_client = None
             ns.message = 'Running in view mode'
@@ -124,20 +130,18 @@ def main():
         my_order_handler = order_handler.OrderHandler(my_authenticated_client,ns)
         my_order_handler.start()
         
-        if not view_mode:
-            my_algo_runner = algorithm_handler.AlgorithmHandler(ns, my_authenticated_client, my_order_handler)
-            my_algo_runner.start()
+        # if not view_mode:
+        #     my_algo_runner = algorithm_handler.AlgorithmHandler(ns, my_authenticated_client, my_order_handler, algorithm_file=args.algorithm_file)
+        #     my_algo_runner.start()
         
         while not my_order_book.has_started:
             time.sleep(0.1)
 
-        mytui = tui.Menu(ns, my_order_book, my_authenticated_client, my_order_handler)
+        mytui = tui.Menu(ns, my_order_book, my_authenticated_client, my_order_handler, algorithm_file=args.algorithm_file)
         curses.wrapper(mytui.start)
 
         
     except CustomExit:
-        if not view_mode:
-            my_algo_runner.close()
         my_order_book.close()
         my_order_handler.close()
         

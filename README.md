@@ -31,6 +31,13 @@ to connect to a sandbox, you will be trading with actual money and cryptocurrenc
  pygotrader --config my_config
 ```
 
+To specify a custom algorithm file for automated trading, use the --algorithm_file argument:
+```
+ pygotrader --algorithm_file ./algorithm.py
+```
+To have the system create an initial algorithm file with sample code, run the program without the argument and it will copy the algorithm.py file that comes with the package to the directory you ran the pygotrader command from.
+
+
 For help:
 ```
  pygotrader -h
@@ -54,6 +61,9 @@ Note that the websocket feed for the Coinbase Pro Sandbox has little traffic, so
 in an error with the current websocket-client library, which does not seem to have timeouts implemented 
 properly.  This will be remedied in a future release. For now, use the websocket feed for the 
 regular Coinbase Pro exchange: wss://ws-feed.pro.coinbase.com
+
+### Custom trading algorithm
+While the program offers buying and selling via menu commands, there is also the ability to trade automatically via a custom algorithm.  The algorithm can use any Python library and can call any outside program or API.  There are no limits except for the initial function call.  A sample algorithm that uses linear regression is included as an example.
 
 ### Uninstall
 ```

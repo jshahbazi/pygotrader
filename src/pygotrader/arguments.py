@@ -34,13 +34,21 @@ class ConfigArgumentAction(Action):
         else:
             parser.error("Config file does not exist")
         namespace.config = config_file_name
-            
+
 class ProductArgumentAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         product = values
         if product.upper() not in products:
             parser.error("Unknown product")
-        namespace.product = product.upper()            
+        namespace.product = product.upper()
+        
+class AlgoArgumentAction(Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        algorithm_file = values
+        if not os.path.exists(algorithm_file):
+            parser.error(f"{algorithm_file} not found.  Run this program again without this argument to create a sample file in the local directory.")
+        else:
+            namespace.algorithm_file = algorithm_file
 
 def create_parser():
     """Helper function to parse command-line arguments
@@ -64,5 +72,11 @@ def create_parser():
         metavar=("PRODUCT"),
         action=ProductArgumentAction,
         required=False,
-        default=products[0]) 
+        default=products[0])
+    parser.add_argument("--algorithm_file", 
+        help=f"File that holds the user's trading algorithm. Default is ./algorithm.py",
+        metavar=("PRODUCT"),
+        action=AlgoArgumentAction,
+        required=False,
+        default='./algorithm.py')         
     return parser
