@@ -134,13 +134,13 @@ class OrderHandler(object):
         
     def create_buy_order(self,size,price,product_id,type='market'):
         """Place an order on the queue for the _buy_loop thread in the main loop to consume"""
-        # if type == 'market':
-        #     self.ns.buy_order_queue.append({'order':'buy','type':'market','product':product_id,'size':size,'price':price})
-        # elif type == 'limit':
-        self.ns.buy_order_queue.append({'order':'buy','type':'limit','product':product_id,'size':size,'price':price})
-        # else:
-        #     self.ns.message = "Error in buy order type"
-        #     return
+        if type == 'market':
+            self.ns.buy_order_queue.append({'order':'buy','type':'market','product':product_id,'size':size,'price':price})
+        elif type == 'limit':
+            self.ns.buy_order_queue.append({'order':'buy','type':'limit','product':product_id,'size':size,'price':price})
+        else:
+            self.ns.message = "Error in buy order type"
+            return
         self.buy.set()
 
     def create_sell_order(self,size,price,product_id,type='market'):

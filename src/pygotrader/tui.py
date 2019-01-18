@@ -127,6 +127,8 @@ class Menu(object):
             self.menu = f"Type in price and press <Enter>: {self.input_command}"
         elif self.mode == 'sell_amount':
             self.menu = f"Type in amount and press <Enter>: {self.input_command}"
+        elif self.mode == 'sell_price':
+            self.menu = f"Type in price and press <Enter>: {self.input_command}"            
         elif self.mode == 'cancel_order':
             self.menu = f"Type in order number and press <Enter> to cancel: {self.input_command}"         
         else:
@@ -142,24 +144,15 @@ class Menu(object):
         self.last_match = self.ns.last_match
         self.asks = self.ns.ui_asks
         self.bids = self.ns.ui_bids
-        
         # This is hacky because Manager dictionaries are buggy
         # and you can't get an iterator directly from them,
-        # so we do a deep copy to get an iterator from that
+        # so we do a deep copy and turn it into a list to get an iterator from that
         # See https://bugs.python.org/issue6766
         temp_dict = {}
         copy.deepcopy(self.ns.my_orders, temp_dict)
         orders = list(temp_dict.values())[0] #ignore extra Manager dict data
         self.my_orders = [orders[order] for order in orders]
         ############
-        # self.open_orders = [self.my_orders[order] for order in self.my_orders if self.my_orders[order]['status'] == 'open']
-        # self.closed_orders = [self.my_orders[order] for order in self.my_orders if self.my_orders[order]['status'] == 'closed']
-        # self.ordered_orders = open_orders + closed_orders
-        # for item in open_orders:
-        #     with open('debug.txt','a+') as f:
-        #         f.write(str(item))
-        #         f.write('\n')
-        
         self.message = self.ns.message
         self.my_crypto = self.product.split('-')[0] #This is super hacky. TODO: Fix
         if self.authenticated_client:
@@ -188,7 +181,7 @@ class Menu(object):
             if key_char != 'q':
                 return
             self.menu_choice_handler(key_char)
-        elif self.mode in ['buy_amount','buy_price','sell_amount','cancel_order']:
+        elif self.mode in ['buy_amount','buy_price','sell_amount','sell_price','cancel_order']:
             if key_integer in [10,'\n','\r']: #10 is line-feed
                 self.input_actions(self.input_command)
                 self.input_command = ''
@@ -225,6 +218,9 @@ class Menu(object):
         elif change_to == 'sell_amount':
             self.mode = 'sell_amount'
             self.refresh_time = 0.01
+        elif change_to == 'sell_price':
+            self.mode = 'sell_price'
+            self.refresh_time = 0.01            
         elif change_to == 'cancel_order':
             self.mode = 'cancel_order'
             self.refresh_time = 0.01
@@ -244,12 +240,16 @@ class Menu(object):
                     self.change_mode('buy_price')
             elif self.mode == 'buy_price':
                     price = float(input)
-                    self.order_handler.create_buy_order(size=self.temp_input_amount,price=price,product_id=self.order_book.products)
+                    self.order_handler.create_buy_order(size=self.temp_input_amount,price=price,product_id=self.order_book.products,type='limit')
                     self.temp_input_amount = 0.00
                     self.change_mode('normal')
             elif self.mode == 'sell_amount':
                     self.temp_input_amount = float(input)
-                    self.order_handler.create_sell_order(size=self.temp_input_amount,price=0.00,product_id=self.order_book.products)                
+                    self.change_mode('sell_price')                    
+            elif self.mode == 'sell_price':
+                    price = float(input)
+                    self.order_handler.create_sell_order(size=self.temp_input_amount,price=price,product_id=self.order_book.products,type='limit')
+                    self.temp_input_amount = 0.00
                     self.change_mode('normal')
             elif self.mode == 'cancel_order':
                     order_number = int(input)
