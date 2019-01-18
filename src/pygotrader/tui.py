@@ -142,7 +142,24 @@ class Menu(object):
         self.last_match = self.ns.last_match
         self.asks = self.ns.ui_asks
         self.bids = self.ns.ui_bids
-        self.my_orders = self.ns.my_orders
+        
+        # This is hacky because Manager dictionaries are buggy
+        # and you can't get an iterator directly from them,
+        # so we do a deep copy to get an iterator from that
+        # See https://bugs.python.org/issue6766
+        temp_dict = {}
+        copy.deepcopy(self.ns.my_orders, temp_dict)
+        orders = list(temp_dict.values())[0] #ignore extra Manager dict data
+        self.my_orders = [orders[order] for order in orders]
+        ############
+        # self.open_orders = [self.my_orders[order] for order in self.my_orders if self.my_orders[order]['status'] == 'open']
+        # self.closed_orders = [self.my_orders[order] for order in self.my_orders if self.my_orders[order]['status'] == 'closed']
+        # self.ordered_orders = open_orders + closed_orders
+        # for item in open_orders:
+        #     with open('debug.txt','a+') as f:
+        #         f.write(str(item))
+        #         f.write('\n')
+        
         self.message = self.ns.message
         self.my_crypto = self.product.split('-')[0] #This is super hacky. TODO: Fix
         if self.authenticated_client:
@@ -185,7 +202,6 @@ class Menu(object):
             self.change_mode('buy_amount')
         elif input == 'c':
             self.change_mode('cancel_order')
-            self.ns.message = 'Cancel has not been implemented yet...'
         elif input == 's':
             self.change_mode('sell_amount')
         elif input == 'a':
@@ -237,6 +253,8 @@ class Menu(object):
                     self.change_mode('normal')
             elif self.mode == 'cancel_order':
                     order_number = int(input)
+                    order_id = self.my_orders[order_number - 1]['id']
+                    self.order_handler.create_cancel_order(order_id)
                     self.change_mode('normal')
         except ValueError:
             self.ns.message = 'Bad input'
@@ -292,35 +310,23 @@ class Menu(object):
             
             if self.height > 6:
                 if self.my_orders:
-                    # holder = {}
-                    # newd = {}
-                    # start = time.time()
-                    # copy.deepcopy(self.my_orders, holder)
-                    # newd = list(holder.values())
-                    # myorders = newd[0]
-                    # test_open = [order for order in myorders if myorders[order]['status'] == 'closed']
-                    # self.ns.message = str(time.time() - start)
-                    # order_handler.debug_write(test_open)
-                    
-                    #This is hacky because Manager dictionaries are buggy
-                    #See https://bugs.python.org/issue6766
-                    #Can't get an item iterator, so just get the keys
-                    for idx,order in enumerate(self.my_orders.keys()):
-                    # for idx,order in enumerate(myorders):
+                    for idx,order in enumerate(self.my_orders):
                         if(self.height > 6 + idx + 1):
-                            self.win.addstr(6+idx, 0, "[{}] {}  ".format(idx+1,self.my_orders[order]['product_id']))
-                            if(self.my_orders[order]['side'] == 'buy'):
-                                self.win.addstr("{}".format(self.my_orders[order]['side']), curses.color_pair(1))
-                            elif(my_orders[order]['side'] == 'sell'):
-                                self.win.addstr("{}".format(self.my_orders[order]['side']), curses.color_pair(2))
-                            self.win.addstr("   {}   {:.2f}     {:.9f}".format(self.my_orders[order]['type'],float(self.my_orders[order]['price']),float(self.my_orders[order]['size'])))
-                            self.win.addstr("      {}".format(self.my_orders[order]['status']))
+                            self.win.addstr(6+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
+                            if(order['side'] == 'buy'):
+                                self.win.addstr("{}".format(order['side']), curses.color_pair(1))
+                            elif(order['side'] == 'sell'):
+                                self.win.addstr("{}".format(order['side']), curses.color_pair(2))
+                            self.win.addstr(6+idx, 19,"{}".format(order['type']))
+                            self.win.addstr(6+idx, 27, "{:.2f}".format(float(order['price'])))
+                            self.win.addstr(6+idx, 36, "{:.9f}".format(float(order['size'])))
+                            self.win.addstr(6+idx, 53, "{}".format(order['status']), curses.color_pair(1))
                 else:
                     self.win.addstr(6, 0, "No orders", curses.color_pair(4))
                     
                 self.win.addstr(self.height-3, 0, 'Message: {}'.format(self.message))
                 if self.algorithm_handler != None:
-                    self.win.addstr(self.height-2, 0, 'Automated trading enabled', curses.A_BOLD)
+                    self.win.addstr(self.height-2, 0, 'Automated trading enabled', curses.A_STANDOUT)
             self.win.addstr(self.height-1, 0, self.menu)
         except curses.error:
             raise cli.CustomExit
