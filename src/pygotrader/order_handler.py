@@ -6,7 +6,7 @@ import time
 import datetime as dt
 from itertools import islice
 from threading import Thread
-import json
+import json, os
 import multiprocessing
 
 def debug_write(text, debug_file='debug.txt'):
@@ -84,7 +84,7 @@ class OrderHandler(object):
                     self.ns.message = f"Cancelling order {cancel['order_id']}"
                     result, extended_result = self.cancel_order(cancel['order_id'])
                     if result:
-                        self.ns.message = ''
+                        self.ns.message = extended_result
                         self.load_my_orders()
                     else:
                         self.ns.message = f"Cancel failed: {extended_result}"
@@ -111,8 +111,18 @@ class OrderHandler(object):
         
     def load_my_orders(self):
         my_orders = self.authenticated_client.get_orders()
+        temp_dict ={}
         for order in my_orders:
-            self.create_or_update_my_order(order)
+            temp_dict[order['id']] = {'id':order['id'],
+                                            'product_id':order['product_id'],
+                                            'side':order['side'],
+                                            'type':order['type'],
+                                            'price':order['price'],
+                                            'size':order['size'],
+                                            'status':order['status']}
+        self.ns.my_orders = temp_dict
+            
+        
 
     def start(self):
         self.process = multiprocessing.Process(target=self.main_loop)
@@ -176,6 +186,13 @@ class OrderHandler(object):
                     debug_write("place_order: {my_order} - side: {side} size: {size} price: {price} type: {type}")
                 time.sleep(1)
             
+    def cancel_order(self,order_id):
+        canceled_order = self.authenticated_client.cancel_order(order_id)
+        if order_id in canceled_order:
+            return True, "Order Canceled."
+        else:
+            return False, f"Unable to cancel order: {canceled_order}."
+            
     def get_order(self, order_timeout):
         for i in range(0,10):
             try:
@@ -186,11 +203,3 @@ class OrderHandler(object):
                 continue
                 
         raise ValueError("(OrderHandler.get_order) Unknown error: Order ID not being returned.")
-        
-    def create_or_update_my_order(self, my_order):
-        self.ns.my_orders[my_order['id']] = {'product_id':my_order['product_id'],
-                                            'side':my_order['side'],
-                                            'type':my_order['type'],
-                                            'price':my_order['price'],
-                                            'size':my_order['size'],
-                                            'status':my_order['status']}
