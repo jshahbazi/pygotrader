@@ -99,11 +99,11 @@ class PygoOrderBook(OrderBook):
                 msg = json.loads(data)
             except ValueError as e:
                 self.on_error(e)
-                self.ns.message = f"Websocket connection has been closed. Error: {e}"
+                # self.ns.message = f"Websocket connection has been closed. Error: {e}"
                 return 'error'
             except Exception as e:
                 self.on_error(e)
-                self.ns.message = f"Websocket connection has been closed. Error: {e}"
+                # self.ns.message = f"Websocket connection has been closed. Error: {e}"
                 return 'error'
             else:
                 self.on_message(msg)
@@ -115,7 +115,8 @@ class PygoOrderBook(OrderBook):
                 self.keepalive = Thread(target=self._keepalive)
                 result = self._listen()
                 if result == 'error':
-                    self.ns.message = 'Restarting websocket...'
+                    # self.ns.message = 'Restarting websocket...'
+                    pass
                 else:
                     self._disconnect()
 
