@@ -171,7 +171,7 @@ class Menu(object):
         #Curses sends this key when resizing the window
         if key_integer == curses.KEY_RESIZE:
             self.calculate_size()
-            if debug:
+            if self.debug:
                 self.ns.message = f"{self.height},{self.width}"
                 
         if key_integer == 27:  #ESC key
