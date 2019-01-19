@@ -1,13 +1,24 @@
 """
 User-made algorithm
 
-User can create buy and sell orders using the order_handler class and following methods:
+User can create buy, sell, and cancel orders using the order_handler class and following methods:
 
 order_handler.create_buy_order(size,price,product_id,type='market')
 order_handler.create_sell_order(size,price,product_id,type='limit')
+order_handler.create_cancel_order(order_id)
 
-TODO: 
-- More user-friendly way of interacting with message window and shared namespace data
+Order ID's can be obtained from the current user order list contained in ns.my_orders, which is a
+dictionary that has the following structure:
+
+ns.my_orders[ORDER_ID] = {'id':ORDER_ID,
+                          'product_id':PRODUCT_ID,   #BTC-USD or whatever
+                          'side':ORDER_SIDE,         #buy or sell
+                          'type':ORDER_TYPE,         #market or limit
+                          'price':ORDER_PRICE,
+                          'size':ORDER_SIZE,
+                          'status':ORDER_STATUS}     #[open, pending, active]
+                          
+For more info on the Coinbase Pro API: https://docs.pro.coinbase.com/                          
 """
 
 
