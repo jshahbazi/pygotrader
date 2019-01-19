@@ -20,10 +20,17 @@ class OrderHandler(object):
     
     Important methods:
     main_loop: A separate process that launches child threads to handle buy, sell,
-    and cancel orders, and waits for a shutdown event.  The child threads each wait
-    for specific events before doing their work.
+    cancel orders, and get lists of existing orders, and waits for a shutdown event.  
+    The child threads each wait for specific events before doing their work.
     
-    place_order: Places orders via the authenticated_client.  
+    place_order: Places orders via the authenticated_client. This method is used by various
+    buy, sell, cancel child threads to place an order after it is pulled off their queue.
+    
+    create_buy_order: create_sell_order: Methods to create orders to put onto the order queue, that 
+    are then pulled off by the child threads, which use place_order() to actually place the order.
+    By default they are market orders, but when specified they can be limit orders.
+    
+    load_my_orders: Gets all the user's orders from the authenticated_client
     """
     def __init__(self, authenticated_client, multiprocessing_namespace,debug=False):
         self.authenticated_client = authenticated_client
@@ -193,13 +200,13 @@ class OrderHandler(object):
         else:
             return False, f"Unable to cancel order: {canceled_order}."
             
-    def get_order(self, order_timeout):
-        for i in range(0,10):
-            try:
-                my_order = self.authenticated_client.get_order(order_id)
-                return my_order
-            except requests.exceptions.HTTPError:
-                time.sleep(1)
-                continue
+    # def get_order(self, order_timeout):
+    #     for i in range(0,10):
+    #         try:
+    #             my_order = self.authenticated_client.get_order(order_id)
+    #             return my_order
+    #         except requests.exceptions.HTTPError:
+    #             time.sleep(1)
+    #             continue
                 
-        raise ValueError("(OrderHandler.get_order) Unknown error: Order ID not being returned.")
+    #     raise ValueError("(OrderHandler.get_order) Unknown error: Order ID not being returned.")
