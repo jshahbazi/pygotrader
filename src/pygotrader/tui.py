@@ -120,19 +120,19 @@ class Menu(object):
         if self.mode == 'view':
             self.menu = f"Press key for action - (Q)uit: {self.input_command}"
         elif self.mode == 'normal':
-            self.menu = f"Press key for action - (B)uy, (S)ell, (C)ancel, (A)utomated trading, (Q)uit: {self.input_command}"
-        elif self.mode == 'buy_amount':
+            self.menu = f"Press key for action - (B)uy, (S)ell, (L)imit order, (C)ancel, (A)utomated trading, (Q)uit: {self.input_command}"
+        elif self.mode == 'limit_order':
+            self.menu = f"Press key for action (or ESC to return) - Create (B)uy limit order, (S)ell limit order: {self.input_command}"
+        elif self.mode == 'buy_market' or self.mode == 'sell_market':
             self.menu = f"Type in amount and press <Enter>: {self.input_command}"
-        elif self.mode == 'buy_price':
+        elif self.mode == 'buy_amount' or self.mode == 'sell_amount':
+            self.menu = f"Type in amount and press <Enter>: {self.input_command}"
+        elif self.mode == 'buy_price' or self.mode == 'sell_price':
             self.menu = f"Type in price and press <Enter>: {self.input_command}"
-        elif self.mode == 'sell_amount':
-            self.menu = f"Type in amount and press <Enter>: {self.input_command}"
-        elif self.mode == 'sell_price':
-            self.menu = f"Type in price and press <Enter>: {self.input_command}"            
         elif self.mode == 'cancel_order':
             self.menu = f"Type in order number and press <Enter> to cancel: {self.input_command}"         
         else:
-            self.menu = f"Press key for action - (B)uy, (S)ell, (C)ancel, (A)utomated trading, (Q)uit: {self.input_command}"
+            self.menu = f"Press key for action - (B)uy, (S)ell, (L)imit order, (C)ancel, (A)utomated trading, (Q)uit: {self.input_command}"
         
     def calculate_size(self):
         self.height,self.width = self.stdscr.getmaxyx()
@@ -173,15 +173,20 @@ class Menu(object):
             self.calculate_size()
             if debug:
                 self.ns.message = f"{self.height},{self.width}"
+                
+        if key_integer == 27:  #ESC key
+            self.change_mode("normal")
 
         key_char = (chr(key_integer)).lower() #can't handle -1, needs to be here      
-        if self.mode == 'normal':
+        if self.mode == 'normal' or self.mode == 'limit_order':
             self.menu_choice_handler(key_char)
         elif self.mode == 'view':
             if key_char != 'q':
                 return
             self.menu_choice_handler(key_char)
-        elif self.mode in ['buy_amount','buy_price','sell_amount','sell_price','cancel_order']:
+        elif self.mode in ['buy_market','sell_market', \
+                           'buy_amount','buy_price', \
+                           'sell_amount','sell_price','cancel_order']:
             if key_integer in [10,'\n','\r']: #10 is line-feed
                 self.input_actions(self.input_command)
                 self.input_command = ''
@@ -191,38 +196,34 @@ class Menu(object):
                 self.input_command += key_char
 
     def menu_choice_handler(self, input):
-        if input == 'b':
-            self.change_mode('buy_amount')
-        elif input == 'c':
-            self.change_mode('cancel_order')
-        elif input == 's':
-            self.change_mode('sell_amount')
-        elif input == 'a':
-            self.toggle_automated_trading()           
-        elif input == 'q' or input == curses.KEY_EXIT:
-            self.exit()
+        if self.mode == 'normal':
+            if input == 'b':
+                self.change_mode('buy_market')
+            elif input == 's':
+                self.change_mode('sell_market')
+            elif input == 'l':
+                self.change_mode('limit_order')            
+            elif input == 'c':
+                self.change_mode('cancel_order')
+            elif input == 'a':
+                self.toggle_automated_trading()           
+            elif input == 'q' or input == curses.KEY_EXIT:
+                self.exit()
+        elif self.mode == 'limit_order':
+            if input == 'b':
+                self.change_mode('buy_amount')
+            elif input == 's':
+                self.change_mode('sell_amount')            
 
     def change_mode(self,change_to):
-        if change_to == 'normal':
-            self.mode = 'normal'
+        if change_to == 'normal' or change_to == 'view':
+            self.mode = change_to
             self.refresh_time = 0.03
-        elif change_to == 'view':
-            self.mode = 'view'
-            self.refresh_time = 0.03           
-        elif change_to == 'buy_amount':
-            self.mode = 'buy_amount'
-            self.refresh_time = 0.01
-        elif change_to == 'buy_price':
-            self.mode = 'buy_price'
-            self.refresh_time = 0.01
-        elif change_to == 'sell_amount':
-            self.mode = 'sell_amount'
-            self.refresh_time = 0.01
-        elif change_to == 'sell_price':
-            self.mode = 'sell_price'
-            self.refresh_time = 0.01            
-        elif change_to == 'cancel_order':
-            self.mode = 'cancel_order'
+        elif change_to in ['buy_amount','sell_amount', \
+                           'buy_price','sell_price', \
+                           'limit_order','cancel_order', \
+                           'buy_market','sell_market']:
+            self.mode = change_to
             self.refresh_time = 0.01
         else:
             self.ns.message = 'Unknown mode'
@@ -235,7 +236,15 @@ class Menu(object):
             return
 
         try:        
-            if self.mode == 'buy_amount':
+            if self.mode == 'buy_market':
+                    amount = float(input)
+                    self.order_handler.create_buy_order(size=amount,price=0.00,product_id=self.order_book.products)
+                    self.change_mode('normal')
+            elif self.mode == 'sell_market':
+                    amount = float(input)
+                    self.order_handler.create_sell_order(size=amount,price=0.00,product_id=self.order_book.products)
+                    self.change_mode('normal')
+            elif self.mode == 'buy_amount':
                     self.temp_input_amount = float(input)
                     self.change_mode('buy_price')
             elif self.mode == 'buy_price':
