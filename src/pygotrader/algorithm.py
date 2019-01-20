@@ -48,9 +48,9 @@ def trading_algorithm(ns, order_handler, asks=None, bids=None, matches=None):
     def display_message(text):
         ns.message = text
         
-    
+    #This is a rolling window to allow the algorithm to only view the matches that happened
+    #in the last 10 seconds
     rolling_window = 10
-
     length = len(matches)
     now = datetime.datetime.utcnow()
     i=0
@@ -59,13 +59,15 @@ def trading_algorithm(ns, order_handler, asks=None, bids=None, matches=None):
         if start < (now - datetime.timedelta(seconds=rolling_window)):
              del matches[i]
              i=-1
-             length = len(matches)
+             length = len(matches)  #New matches may be added while this loop is executing
         else:
             break
         i+=1
     current_matches = matches    
     
-    
+    #Run a linear regression on the matches' price and then based on the slope, buy or sell
+    #Note that this doesn't turn a profit.  This will lose you money.  But its an example
+    #of what you can do.
     list_size = len(current_matches)
     if (list_size <= 2):
         return 0
