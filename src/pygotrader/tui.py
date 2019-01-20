@@ -244,9 +244,12 @@ class Menu(object):
             key_integer = self.win.getch()
         except curses.error:
             return
+        
 
         if key_integer == -1:
             return
+        else:
+            key_char = (chr(key_integer)).lower() #chr() can't handle -1, needs to be here
         
         #Curses sends this key when resizing the window
         if key_integer == curses.KEY_RESIZE:
@@ -254,25 +257,28 @@ class Menu(object):
             if self.debug:
                 self.ns.message = f"{self.height},{self.width}"
             return
-                
-        if key_integer == 27:  #ESC key
-            self.change_mode("normal")
-            return
 
-        #curses.KEY_UP and curses.KEY_DOWN don't work, so AND together values.
-        if key_integer == (27 and 91 and 65):    #Up arrow key
-            if self.order_display_start > 0:
-                self.order_display_start -= 1
-            return
-        elif key_integer == (27 and 65 and 66):  #Down arrow key
-            if len(self.my_orders) > self.order_display_start:
-                self.order_display_start += 1     
-            return                  
-
-
-        key_char = (chr(key_integer)).lower() #can't handle -1, needs to be here      
-        if self.mode == 'normal' or self.mode == 'limit_order' or self.mode == 'view':
-            self.menu_choice_handler(key_char)
+              
+        if self.mode == 'normal' or self.mode == 'limit_order':
+            if key_integer == 27:  #ESC key
+                self.change_mode("normal")
+                return
+            #curses.KEY_UP and curses.KEY_DOWN don't work, so AND together values.
+            elif key_integer == (27 and 91 and 65):    #Up arrow key
+                if self.order_display_start > 0:
+                    self.order_display_start -= 1
+                return
+            elif key_integer == (27 and 65 and 66):  #Down arrow key
+                if len(self.my_orders) > self.order_display_start:
+                    self.order_display_start += 1     
+                return              
+            else:
+                self.menu_choice_handler(key_char)
+        elif self.mode == 'view':
+            if key_char != 'q':  #View mode shouldn't have any other option
+                return
+            else:
+                self.menu_choice_handler(key_char)
         elif self.mode in ['buy_market','sell_market', \
                            'buy_amount','buy_price', \
                            'sell_amount','sell_price','cancel_order']:
