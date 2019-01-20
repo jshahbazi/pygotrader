@@ -59,6 +59,7 @@ class Menu(object):
         self.height = 0
         self.width = 0
         self.temp_input_amount = 0.00
+        self.order_display_start = 0
 
     def start(self, stdscr):
         if self.authenticated_client:
@@ -86,7 +87,8 @@ class Menu(object):
         curses.init_pair(2, curses.COLOR_RED, -1)
         curses.init_pair(3, curses.COLOR_YELLOW, -1)
         curses.init_pair(4, curses.COLOR_CYAN, -1)
-        curses.noecho()
+        # curses.noecho()
+        self.stdscr.keypad(1)  #needed for special characters such as KEY_UP
         curses.halfdelay(5)        
 
     def check_order_book(self):
@@ -106,6 +108,10 @@ class Menu(object):
                 time.sleep(self.refresh_time)
             except KeyboardInterrupt:
                 self.exit()
+
+######################################################
+# Display Handling
+
 
     def draw(self):
         self.win.erase()
@@ -163,8 +169,82 @@ class Menu(object):
                 if(elem['currency'] == self.my_crypto):
                     self.my_balances[self.product] = float(elem['balance'])
 
+
+    def draw_main_window(self):
+        try:
+            if self.width >= 85:
+                width_multiplier = 0.5
+            else:
+                width_multiplier = 0.4
+            live_data_start_col = int(width_multiplier*self.width)
+            askbid_start_col = live_data_start_col + 25
+            
+            if self.height > 3:
+                self.win.addstr(0,0,'Product\t\tBalances', curses.A_BOLD)
+                self.win.addstr(0,askbid_start_col,'Ask/Bid    Ask/Bid Depth', curses.A_BOLD)
+                self.win.addstr(1,0,f"{self.product}")
+                if self.mode != 'view':
+                    self.win.addstr("\t\tUSD:  ")    
+                    self.win.addstr("{:>10.2f}".format(self.my_balances['USD']), curses.color_pair(1)) 
+                    self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
+                    self.win.addstr("{:>10.9f}".format(self.my_balances[self.product]), curses.color_pair(1))
+        
+                self.win.addstr(1, live_data_start_col, "Last Match: {:.2f}".format(self.last_match))
+                self.win.addstr(2, live_data_start_col, "Highest Bid: {:.2f}".format(self.highest_bid))
+                
+            if self.height > (self.askbid_spread_size * 2 + 1):
+                max_asks = self.askbid_spread_size
+                for idx,ask in enumerate(self.asks):
+                    if idx == max_asks:
+                        break                    
+                    self.win.addstr(1+idx,askbid_start_col,"{:.2f}      {:.2f}".format(self.asks[(max_asks-1)-idx]['price'],self.asks[(max_asks-1)-idx]['depth']), curses.color_pair(3))
+        
+                max_bids = self.askbid_spread_size
+                for idx,bid in enumerate(self.bids):
+                    if idx == max_bids:
+                        break
+                    index = 1 + self.askbid_spread_size + idx
+                    self.win.addstr(index,askbid_start_col,"{:.2f}      {:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
+            
+            if self.height > 5:
+                self.win.addstr(4, 0, 'Orders: [▲ and ▼ to scroll]', curses.A_BOLD)
+                self.win.addstr(5, 0, 'ID  Product  Side  Type    Price    Remaining Size   Status', curses.A_BOLD)
+            
+            if self.height > 6:
+                if self.my_orders:
+                    order_set = self.my_orders[self.order_display_start:]
+                    for idx,order in enumerate(order_set):
+                        if(self.height > 6 + idx + 1):
+                            self.win.addstr(6+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
+                            if(order['side'] == 'buy'):
+                                self.win.addstr("{}".format(order['side']), curses.color_pair(1))
+                            elif(order['side'] == 'sell'):
+                                self.win.addstr("{}".format(order['side']), curses.color_pair(2))
+                            self.win.addstr(6+idx, 19,"{}".format(order['type']))
+                            self.win.addstr(6+idx, 27, "{:.2f}".format(float(order['price'])))
+                            self.win.addstr(6+idx, 36, "{:.9f}".format(float(order['size'])))
+                            self.win.addstr(6+idx, 53, "{}".format(order['status']), curses.color_pair(1))
+                else:
+                    self.win.addstr(6, 0, "No orders", curses.color_pair(4))
+                    
+                self.win.addstr(self.height-3, 0, 'Message: {}'.format(self.message))
+                if self.algorithm_handler != None:
+                    self.win.addstr(self.height-2, 0, 'Automated trading enabled', curses.A_STANDOUT)
+            self.win.addstr(self.height-1, 0, self.menu)
+        except curses.error:
+            raise cli.CustomExit
+            
+
+######################################################
+# Input Handling
+
+            
     def input_handler(self):
-        key_integer = self.win.getch()
+        try:
+            key_integer = self.win.getch()
+        except curses.error:
+            return
+
         if key_integer == -1:
             return
         
@@ -173,16 +253,25 @@ class Menu(object):
             self.calculate_size()
             if self.debug:
                 self.ns.message = f"{self.height},{self.width}"
+            return
                 
         if key_integer == 27:  #ESC key
             self.change_mode("normal")
+            return
+
+        #curses.KEY_UP and curses.KEY_DOWN don't work, so AND together values.
+        if key_integer == (27 and 91 and 65):    #Up arrow key
+            if self.order_display_start > 0:
+                self.order_display_start -= 1
+            return
+        elif key_integer == (27 and 65 and 66):  #Down arrow key
+            if len(self.my_orders) > self.order_display_start:
+                self.order_display_start += 1     
+            return                  
+
 
         key_char = (chr(key_integer)).lower() #can't handle -1, needs to be here      
-        if self.mode == 'normal' or self.mode == 'limit_order':
-            self.menu_choice_handler(key_char)
-        elif self.mode == 'view':
-            if key_char != 'q':
-                return
+        if self.mode == 'normal' or self.mode == 'limit_order' or self.mode == 'view':
             self.menu_choice_handler(key_char)
         elif self.mode in ['buy_market','sell_market', \
                            'buy_amount','buy_price', \
@@ -213,7 +302,10 @@ class Menu(object):
             if input == 'b':
                 self.change_mode('buy_amount')
             elif input == 's':
-                self.change_mode('sell_amount')            
+                self.change_mode('sell_amount')
+        elif self.mode == 'view':
+            if input == 'q' or input == curses.KEY_EXIT:
+                self.exit()
 
     def change_mode(self,change_to):
         if change_to == 'normal' or change_to == 'view':
@@ -262,7 +354,7 @@ class Menu(object):
                     self.change_mode('normal')
             elif self.mode == 'cancel_order':
                     order_number = int(input)
-                    order_id = self.my_orders[order_number - 1]['id']
+                    order_id = self.my_orders[self.order_display_start + order_number - 1]['id']
                     self.order_handler.create_cancel_order(order_id)
                     self.change_mode('normal')
         except ValueError:
@@ -275,67 +367,4 @@ class Menu(object):
             self.algorithm_handler.start()
         else:
             self.algorithm_handler.close()
-            self.algorithm_handler = None
-            
-    def draw_main_window(self):
-        try:
-            if self.width >= 85:
-                width_multiplier = 0.5
-            else:
-                width_multiplier = 0.4
-            live_data_start_col = int(width_multiplier*self.width)
-            askbid_start_col = live_data_start_col + 25
-            
-            if self.height > 3:
-                self.win.addstr(0,0,'Product\t\tBalances', curses.A_BOLD)
-                self.win.addstr(0,askbid_start_col,'Ask/Bid    Ask/Bid Depth', curses.A_BOLD)
-                self.win.addstr(1,0,f"{self.product}")
-                if self.mode != 'view':
-                    self.win.addstr("\t\tUSD:  ")    
-                    self.win.addstr("{:>10.2f}".format(self.my_balances['USD']), curses.color_pair(1)) 
-                    self.win.addstr(2, 0, "\t\t{}: ".format('BTC'))
-                    self.win.addstr("{:>10.9f}".format(self.my_balances[self.product]), curses.color_pair(1))
-        
-                self.win.addstr(1, live_data_start_col, "Last Match: {:.2f}".format(self.last_match))
-                self.win.addstr(2, live_data_start_col, "Highest Bid: {:.2f}".format(self.highest_bid))
-                
-            if self.height > (self.askbid_spread_size * 2 + 1):
-                max_asks = self.askbid_spread_size
-                for idx,ask in enumerate(self.asks):
-                    if idx == max_asks:
-                        break                    
-                    self.win.addstr(1+idx,askbid_start_col,"{:.2f}      {:.2f}".format(self.asks[(max_asks-1)-idx]['price'],self.asks[(max_asks-1)-idx]['depth']), curses.color_pair(3))
-        
-                max_bids = self.askbid_spread_size
-                for idx,bid in enumerate(self.bids):
-                    if idx == max_bids:
-                        break
-                    index = 1 + self.askbid_spread_size + idx
-                    self.win.addstr(index,askbid_start_col,"{:.2f}      {:.2f}".format(bid['price'],bid['depth']), curses.color_pair(4))
-            
-            if self.height > 5:
-                self.win.addstr(4, 0, 'Orders:', curses.A_BOLD)
-                self.win.addstr(5, 0, 'ID  Product  Side  Type    Price    Remaining Size   Status', curses.A_BOLD)
-            
-            if self.height > 6:
-                if self.my_orders:
-                    for idx,order in enumerate(self.my_orders):
-                        if(self.height > 6 + idx + 1):
-                            self.win.addstr(6+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
-                            if(order['side'] == 'buy'):
-                                self.win.addstr("{}".format(order['side']), curses.color_pair(1))
-                            elif(order['side'] == 'sell'):
-                                self.win.addstr("{}".format(order['side']), curses.color_pair(2))
-                            self.win.addstr(6+idx, 19,"{}".format(order['type']))
-                            self.win.addstr(6+idx, 27, "{:.2f}".format(float(order['price'])))
-                            self.win.addstr(6+idx, 36, "{:.9f}".format(float(order['size'])))
-                            self.win.addstr(6+idx, 53, "{}".format(order['status']), curses.color_pair(1))
-                else:
-                    self.win.addstr(6, 0, "No orders", curses.color_pair(4))
-                    
-                self.win.addstr(self.height-3, 0, 'Message: {}'.format(self.message))
-                if self.algorithm_handler != None:
-                    self.win.addstr(self.height-2, 0, 'Automated trading enabled', curses.A_STANDOUT)
-            self.win.addstr(self.height-1, 0, self.menu)
-        except curses.error:
-            raise cli.CustomExit
+            self.algorithm_handler = None            
