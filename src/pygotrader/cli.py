@@ -129,11 +129,7 @@ def main():
         
         my_order_handler = order_handler.OrderHandler(my_authenticated_client,ns)
         my_order_handler.start()
-        
-        # if not view_mode:
-        #     my_algo_runner = algorithm_handler.AlgorithmHandler(ns, my_authenticated_client, my_order_handler, algorithm_file=args.algorithm_file)
-        #     my_algo_runner.start()
-        
+
         while not my_order_book.has_started:
             time.sleep(0.1)
 

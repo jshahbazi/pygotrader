@@ -18,7 +18,24 @@ ns.my_orders[ORDER_ID] = {'id':ORDER_ID,
                           'size':ORDER_SIZE,
                           'status':ORDER_STATUS}     #[open, pending, active]
                           
-For more info on the Coinbase Pro API: https://docs.pro.coinbase.com/                          
+For more info on the Coinbase Pro API: https://docs.pro.coinbase.com/  
+
+
+The shared namespace, as denoted by the "ns" object passed into the function, contains the 
+following variables and data structures:
+
+    ns.exchange_order_matches = my_manager.list()
+    ns.buy_order_queue = my_manager.list()
+    ns.sell_order_queue = my_manager.list()
+    ns.cancel_order_queue = my_manager.list()
+    ns.my_orders = my_manager.dict()
+    ns.last_match = 0.00
+    ns.highest_bid = 0.00
+    ns.lowest_ask = 0.00
+    ns.message = ''
+    ns.ui_asks = my_manager.list()
+    ns.ui_bids = my_manager.list()
+    
 """
 
 
