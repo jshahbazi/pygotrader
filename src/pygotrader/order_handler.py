@@ -1,9 +1,6 @@
 from cbpro.order_book import OrderBook
-from sortedcontainers import SortedDict
 from decimal import Decimal
-import pickle
 import time
-import datetime as dt
 from itertools import islice
 from threading import Thread
 import json, os
@@ -54,7 +51,7 @@ class OrderHandler(object):
                                                                product_id=buy_order['product'],
                                                                type=buy_order['type'])
                     if result:
-                        self.ns.message = f"Buy order placed: {order_id}"
+                        self.ns.message = f"Buy order {order_id}: {order['status'].upper()}"
                         self.load_my_orders()
                     else:
                         self.ns.message = f"Buy order failed"
@@ -74,7 +71,7 @@ class OrderHandler(object):
                                                                product_id=sell_order['product'],
                                                                type=sell_order['type'])                    
                     if result:
-                        self.ns.message = f"Sell order placed: {order_id}"
+                        self.ns.message = f"Sell order {order_id}: {order['status'].upper()}"
                         self.load_my_orders()
                     else:
                         self.ns.message = f"Sell order failed"
@@ -129,6 +126,16 @@ class OrderHandler(object):
                                             'status':order['status']}
         self.ns.my_orders = temp_dict
             
+    # def track_my_orders(self):
+    #     # temp_dict = {}
+    #     # copy.deepcopy(self.ns.my_orders, temp_dict)
+    #     # orders = list(temp_dict.values())[0] #ignore extra Manager dict data
+    #     # my_orders = [orders[order] for order in orders]
+    #     my_orders = self.authenticated_client.get_orders()
+    #     # print(my_orders)
+    #     for order in my_orders:
+    #         result = self.get_order(order,10)
+    #         self.ns.message = result['status'] if result else "Nope"
         
 
     def start(self):
@@ -200,13 +207,18 @@ class OrderHandler(object):
         else:
             return False, f"Unable to cancel order: {canceled_order}."
             
-    # def get_order(self, order_timeout):
-    #     for i in range(0,10):
-    #         try:
-    #             my_order = self.authenticated_client.get_order(order_id)
-    #             return my_order
-    #         except requests.exceptions.HTTPError:
-    #             time.sleep(1)
-    #             continue
+    # def get_order(self, order, order_timeout):
+    #     order_id = order['id']
+    #     self.ns.message = order_id
+    #     # time.sleep(2)
+    #     # start = time.time()
+    #     # now = time.time()
+    #     # while now < start + order_timeout: 
+    #         # try:
+    #     my_order = self.authenticated_client.get_order(order_id)
+    #     return my_order
+    #         # except requests.exceptions.HTTPError:
+    #             # time.sleep(1)
+    #             # continue
                 
-    #     raise ValueError("(OrderHandler.get_order) Unknown error: Order ID not being returned.")
+    #     # raise ValueError("(OrderHandler.get_order) Unknown error: Order ID not being returned.")
