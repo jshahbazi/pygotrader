@@ -104,7 +104,6 @@ class Menu(object):
                 self.check_order_book()
                 self.draw()
                 self.input_handler()
-                # self.ns.message = self.mode
                 time.sleep(self.refresh_time)
             except KeyboardInterrupt:
                 self.exit()
@@ -235,10 +234,20 @@ class Menu(object):
             raise cli.CustomExit
             
 
+
 ######################################################
 # Input Handling
+#
+# Mode flowchart:
+#
+# normal -> buy_market -> normal
+# normal -> sell_market -> normal
+# normal -> limit_order -> buy_amount -> buy_price -> normal
+# normal -> limit_order -> sell_amount -> sell_price -> normal
+# normal -> cancel_order -> normal
+# view (can't change mode)
 
-            
+        
     def input_handler(self):
         try:
             key_integer = self.win.getch()
@@ -249,7 +258,7 @@ class Menu(object):
         if key_integer == -1:
             return
         else:
-            key_char = (chr(key_integer)).lower() #chr() can't handle -1, needs to be here
+            key_char = (chr(key_integer)).lower() #chr() can't handle -1, so this needs to be after the -1 check
         
         #Curses sends this key when resizing the window
         if key_integer == curses.KEY_RESIZE:
@@ -282,6 +291,9 @@ class Menu(object):
         elif self.mode in ['buy_market','sell_market', \
                            'buy_amount','buy_price', \
                            'sell_amount','sell_price','cancel_order']:
+            if key_integer == 27:  #ESC key
+                self.change_mode("normal")
+                return                               
             if key_integer in [10,'\n','\r']: #10 is line-feed
                 self.input_actions(self.input_command)
                 self.input_command = ''
@@ -360,8 +372,11 @@ class Menu(object):
                     self.change_mode('normal')
             elif self.mode == 'cancel_order':
                     order_number = int(input)
-                    order_id = self.my_orders[self.order_display_start + order_number - 1]['id']
-                    self.order_handler.create_cancel_order(order_id)
+                    if order_number < (len(self.my_orders) - self.order_display_start) and order_number > 0:
+                        order_id = self.my_orders[self.order_display_start + order_number - 1]['id']
+                        self.order_handler.create_cancel_order(order_id)
+                    else:
+                        self.ns.message = 'Order number does not exist'
                     self.change_mode('normal')
         except ValueError:
             self.ns.message = 'Bad input'
