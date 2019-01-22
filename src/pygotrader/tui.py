@@ -125,9 +125,12 @@ class Menu(object):
         if self.mode == 'view':
             self.menu = f"Press key for action - (Q)uit: {self.input_command}"
         elif self.mode == 'normal':
-            self.menu = f"Press key for action - (B)uy, (S)ell, (L)imit order, (C)ancel, (A)utomated trading, (Q)uit: {self.input_command}"
+            if self.width <= 92:
+                self.menu = f"Menu: (B)uy, (S)ell, (L)imit, (C)ancel, (A)utomated, (Q)uit: {self.input_command}"
+            else:
+                self.menu = f"Menu: (B)uy, (S)ell, (L)imit order, (C)ancel, (A)utomated trading, (Q)uit: {self.input_command}"
         elif self.mode == 'limit_order':
-            self.menu = f"Press key for action (or ESC to return) - Create (B)uy limit order, (S)ell limit order: {self.input_command}"
+            self.menu = f"Menu: (ESC to return) - Create (B)uy limit order, (S)ell limit order: {self.input_command}"
         elif self.mode == 'buy_market' or self.mode == 'sell_market':
             self.menu = f"Type in amount and press <Enter>: {self.input_command}"
         elif self.mode == 'buy_amount' or self.mode == 'sell_amount':
@@ -135,9 +138,9 @@ class Menu(object):
         elif self.mode == 'buy_price' or self.mode == 'sell_price':
             self.menu = f"Type in price and press <Enter>: {self.input_command}"
         elif self.mode == 'cancel_order':
-            self.menu = f"Type in order number and press <Enter> to cancel: {self.input_command}"         
+            self.menu = f"Type in order number and press <Enter> to cancel order: {self.input_command}"         
         else:
-            self.menu = f"Press key for action - (B)uy, (S)ell, (L)imit order, (C)ancel, (A)utomated trading, (Q)uit: {self.input_command}"
+            self.menu = f"Unknown Mode - Press (Q) to quit..."
         
     def calculate_size(self):
         self.height,self.width = self.stdscr.getmaxyx()
@@ -213,16 +216,18 @@ class Menu(object):
                 if self.my_orders:
                     order_set = self.my_orders[self.order_display_start:]
                     for idx,order in enumerate(order_set):
+                        idx += self.order_display_start
                         if(self.height > 6 + idx + 1):
-                            self.win.addstr(6+idx, 0, "[{}] {}  ".format(idx+1,order['product_id']))
+                            row = 6 + idx - self.order_display_start
+                            self.win.addstr(row, 0, "[{}] {}  ".format(idx+1,order['product_id']))
                             if(order['side'] == 'buy'):
                                 self.win.addstr("{}".format(order['side']), curses.color_pair(1))
                             elif(order['side'] == 'sell'):
                                 self.win.addstr("{}".format(order['side']), curses.color_pair(2))
-                            self.win.addstr(6+idx, 19,"{}".format(order['type']))
-                            self.win.addstr(6+idx, 27, "{:.2f}".format(float(order['price'])))
-                            self.win.addstr(6+idx, 36, "{:.9f}".format(float(order['size'])))
-                            self.win.addstr(6+idx, 53, "{}".format(order['status']), curses.color_pair(1))
+                            self.win.addstr(row, 19,"{}".format(order['type']))
+                            self.win.addstr(row, 27, "{:.2f}".format(float(order['price'])))
+                            self.win.addstr(row, 36, "{:.9f}".format(float(order['size'])))
+                            self.win.addstr(row, 53, "{}".format(order['status']), curses.color_pair(1))
                 else:
                     self.win.addstr(6, 0, "No orders", curses.color_pair(4))
                     
@@ -238,7 +243,7 @@ class Menu(object):
 ######################################################
 # Input Handling
 #
-# Mode flowchart:
+# Menu Mode flowchart:
 #
 # normal -> buy_market -> normal
 # normal -> sell_market -> normal
@@ -278,7 +283,7 @@ class Menu(object):
                     self.order_display_start -= 1
                 return
             elif key_integer == (27 and 65 and 66):  #Down arrow key
-                if len(self.my_orders) > self.order_display_start:
+                if len(self.my_orders) > self.order_display_start + 1:
                     self.order_display_start += 1     
                 return              
             else:
@@ -372,8 +377,8 @@ class Menu(object):
                     self.change_mode('normal')
             elif self.mode == 'cancel_order':
                     order_number = int(input)
-                    if order_number < (len(self.my_orders) - self.order_display_start) and order_number > 0:
-                        order_id = self.my_orders[self.order_display_start + order_number - 1]['id']
+                    if order_number < (len(self.my_orders)) and order_number > 0:
+                        order_id = self.my_orders[order_number - 1]['id']
                         self.order_handler.create_cancel_order(order_id)
                     else:
                         self.ns.message = 'Order number does not exist'
