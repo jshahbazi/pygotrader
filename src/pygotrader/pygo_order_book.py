@@ -6,6 +6,8 @@ import datetime as dt
 from threading import Thread
 import json
 import multiprocessing
+import asyncio
+import websockets
 
 class ExchangeMessage(object):
     """Turns an exchange message into an object so that it can be used 
@@ -80,54 +82,36 @@ class PygoOrderBook(OrderBook):
             self.ns.ui_bids[i] = {'price':price,'depth':depth}
             i=i+1
 
-        
-    def _listen(self):
+    async def _listen(self,sub_params):
         """
         Overriding the grandparent's (WebsocketClient) listen method
         in order to calculate the order depth and copy the data to the 
         shared namespace for the TUI to display
-        """
-        self.keepalive.start()
-        start_time = time.time()
-        while not self.shutdown_event.is_set():
-            try:
-                now = time.time()
-                if((now - start_time) > 0.5):
-                    self.calculate_order_depth()
-                    start_time = now
-                data = self.ws.recv()
-                msg = json.loads(data)
-            except ValueError as e:
-                self.on_error(e)
-                # self.ns.message = f"Websocket connection has been closed. Error: {e}"
-                return 'error'
-            except Exception as e:
-                self.on_error(e)
-                # self.ns.message = f"Websocket connection has been closed. Error: {e}"
-                return 'error'
-            else:
-                self.on_message(msg)
-
-    def start(self):
-        def _go():
+        """        
+        async with websockets.connect(self.url) as websocket:
+            await websocket.send(json.dumps(sub_params))
+            # self.keepalive.start()
+            start_time = time.time()
             while not self.shutdown_event.is_set():
-                self._connect()
-                self.keepalive = Thread(target=self._keepalive)
-                result = self._listen()
-                if result == 'error':
-                    # self.ns.message = 'Restarting websocket...'
-                    pass
+                try:
+                    now = time.time()
+                    if((now - start_time) > 0.5):
+                        self.calculate_order_depth()
+                        start_time = now                    
+                    data = await websocket.recv()
+                    msg = json.loads(data)
+                except ValueError as e:
+                    self.on_error(e)
+                except Exception as e:
+                    self.on_error(e)
                 else:
-                    self._disconnect()
+                    self.on_message(msg)    
 
-        self.on_open()
-        self.thread = multiprocessing.Process(target=_go)
-        self.thread.start()
 
     def on_open(self):
         super()
         self.has_started = True
-        
+
     def on_close(self):
         super()
         self.has_started = False
