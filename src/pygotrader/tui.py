@@ -1,5 +1,7 @@
 import curses, math, time, copy
 from pygotrader import cli, order_handler, algorithm_handler
+from threading import Thread
+import multiprocessing
 
 class Menu(object):
     """The main TUI interface.  Objects are passed here from the main cli 
@@ -60,6 +62,7 @@ class Menu(object):
         self.width = 0
         self.temp_input_amount = 0.00
         self.order_display_start = 0
+        self.shutdown_event = multiprocessing.Event()
 
     def start(self, stdscr):
         if self.authenticated_client:
@@ -69,6 +72,7 @@ class Menu(object):
         self.main_loop()
         
     def exit(self):
+        self.shutdown_event.set()
         if self.algorithm_handler != None:
             self.algorithm_handler.close()
         self.win.erase()
@@ -99,6 +103,37 @@ class Menu(object):
             self.exit()     
 
     def main_loop(self):
+    
+        def info_loop():
+            while not self.shutdown_event.is_set():
+                self.product = self.order_book.products
+                self.highest_bid = self.ns.highest_bid
+                self.last_match = self.ns.last_match
+                self.asks = self.ns.ui_asks
+                self.bids = self.ns.ui_bids
+                # This is hacky because Manager dictionaries are buggy
+                # and you can't get an iterator directly from them,
+                # so we do a deep copy and turn it into a list to get an iterator from that
+                # See https://bugs.python.org/issue6766
+                temp_dict = {}
+                copy.deepcopy(self.ns.my_orders, temp_dict)
+                orders = list(temp_dict.values())[0] #ignore extra Manager dict data
+                self.my_orders = [orders[order] for order in orders]
+                ############
+                self.message = self.ns.message
+                self.my_crypto = self.product.split('-')[0] #This is super hacky. TODO: Fix
+                if self.authenticated_client:
+                    my_accounts = self.authenticated_client.get_accounts()
+                    for elem in my_accounts:
+                        if(elem['currency'] == 'USD'):
+                            self.my_balances['USD'] = float(elem['balance'])
+                        if(elem['currency'] == self.my_crypto):
+                            self.my_balances[self.product] = float(elem['balance'])        
+                time.sleep(0.1)
+        
+        self.info_thread = Thread(target=info_loop)
+        self.info_thread.start()
+        
         while True:
             try:
                 self.check_order_book()
@@ -114,7 +149,7 @@ class Menu(object):
 
     def draw(self):
         self.win.erase()
-        self.assemble_menu_information()
+        # self.assemble_menu_information()
         self.display_menu()
         curses.curs_set(0)
         self.draw_main_window()
@@ -146,30 +181,30 @@ class Menu(object):
         self.height,self.width = self.stdscr.getmaxyx()
         self.askbid_spread_size = min(10,math.floor((0.8 * self.height) / 2.0))
 
-    def assemble_menu_information(self):
-        self.product = self.order_book.products
-        self.highest_bid = self.ns.highest_bid
-        self.last_match = self.ns.last_match
-        self.asks = self.ns.ui_asks
-        self.bids = self.ns.ui_bids
-        # This is hacky because Manager dictionaries are buggy
-        # and you can't get an iterator directly from them,
-        # so we do a deep copy and turn it into a list to get an iterator from that
-        # See https://bugs.python.org/issue6766
-        temp_dict = {}
-        copy.deepcopy(self.ns.my_orders, temp_dict)
-        orders = list(temp_dict.values())[0] #ignore extra Manager dict data
-        self.my_orders = [orders[order] for order in orders]
-        ############
-        self.message = self.ns.message
-        self.my_crypto = self.product.split('-')[0] #This is super hacky. TODO: Fix
-        if self.authenticated_client:
-            my_accounts = self.authenticated_client.get_accounts()
-            for elem in my_accounts:
-                if(elem['currency'] == 'USD'):
-                    self.my_balances['USD'] = float(elem['balance'])
-                if(elem['currency'] == self.my_crypto):
-                    self.my_balances[self.product] = float(elem['balance'])
+    # def info_loop(self):
+    #     self.product = self.order_book.products
+    #     self.highest_bid = self.ns.highest_bid
+    #     self.last_match = self.ns.last_match
+    #     self.asks = self.ns.ui_asks
+    #     self.bids = self.ns.ui_bids
+    #     # This is hacky because Manager dictionaries are buggy
+    #     # and you can't get an iterator directly from them,
+    #     # so we do a deep copy and turn it into a list to get an iterator from that
+    #     # See https://bugs.python.org/issue6766
+    #     temp_dict = {}
+    #     copy.deepcopy(self.ns.my_orders, temp_dict)
+    #     orders = list(temp_dict.values())[0] #ignore extra Manager dict data
+    #     self.my_orders = [orders[order] for order in orders]
+    #     ############
+    #     self.message = self.ns.message
+    #     self.my_crypto = self.product.split('-')[0] #This is super hacky. TODO: Fix
+    #     if self.authenticated_client:
+    #         my_accounts = self.authenticated_client.get_accounts()
+    #         for elem in my_accounts:
+    #             if(elem['currency'] == 'USD'):
+    #                 self.my_balances['USD'] = float(elem['balance'])
+    #             if(elem['currency'] == self.my_crypto):
+    #                 self.my_balances[self.product] = float(elem['balance'])
 
 
     def draw_main_window(self):
