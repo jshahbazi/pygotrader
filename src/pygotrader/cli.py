@@ -5,6 +5,8 @@ import multiprocessing
 from pygotrader import arguments,config, order_handler, pygo_order_book, tui, algorithm_handler
 from pkg_resources import Requirement, resource_filename
 
+#from profiling.tracing import TracingProfiler
+
 class CustomExit(Exception):
     """Custom class to exit program"""
     pass    
@@ -57,7 +59,7 @@ def main():
     """Entry point for the program
     
     Create the objects that are going to run the various parts of the programs.
-    Threads/processes are not directly create here.  That's been left for the
+    Threads/processes are not directly created here.  That's been left for the
     individual classes.
     
     Variables of note:
@@ -78,7 +80,7 @@ def main():
     TODO:
      - Add the ability to create external config class via an install function 
      or some kind of config function within the tui or cli
-     - Rewrite cbpro library to use websockets instead of websocket-client library
+     - Add the ability to export data in real-time to database
     """
     
     signal.signal(signal.SIGTERM, signal_handler)
@@ -102,6 +104,11 @@ def main():
     view_mode = True
     
     try:
+        
+        # profiler = TracingProfiler()
+        # profiler.start()
+        
+        
     
         argument_parser = arguments.create_parser()
         args = argument_parser.parse_args()
@@ -119,16 +126,18 @@ def main():
                 filename = resource_filename(Requirement.parse("pygotrader"),"pygotrader/algorithm.py")
                 print(f"Copying sample algorithm file to ./algorithm.py...")
                 shutil.copyfile(filename,"./algorithm.py")
-                time.sleep(2)                
+                time.sleep(2)       
+                
+            my_order_handler = order_handler.OrderHandler(my_authenticated_client,ns)
+            my_order_handler.start()                
         else:
             my_authenticated_client = None
+            my_order_handler = None
             ns.message = 'Running in view mode'
 
         my_order_book = pygo_order_book.PygoOrderBook(ns,product_id=my_config.product, url=my_config.websocket_url)
         my_order_book.start()
         
-        my_order_handler = order_handler.OrderHandler(my_authenticated_client,ns)
-        my_order_handler.start()
 
         while not my_order_book.has_started:
             time.sleep(0.1)
@@ -139,8 +148,15 @@ def main():
         
     except CustomExit:
         my_order_book.close()
-        my_order_handler.close()
-        
+        if not view_mode:
+            my_order_handler.close()
+        # profiler.stop()
+        # profiler.run_viewer()
         
     except Exception as e:
         print(traceback.format_exc())
+        
+        
+        
+if __name__ == "__main__":
+    main()

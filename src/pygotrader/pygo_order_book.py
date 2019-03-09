@@ -43,7 +43,6 @@ class PygoOrderBook(OrderBook):
     - Adding functionality to handle orders placed by user
     
     TODO:
-    - Replace OrderBook's use of websocket-client with websockets
     - Figure out a better way to share ExchangeMessage objects between processes/threads
     """
     def __init__(self, ns, product_id='BTC-USD', log_to=None, url='wss://ws-feed.pro.coinbase.com'):
