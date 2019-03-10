@@ -12,7 +12,7 @@ class AlgorithmHandler(object):
     """
     This class handles user-created algorithms used for trading.  It will reload
     the algorithm file (which is named algorithm.py by default) in real-time 
-    (well, after a slight lag of 10 seconds by default) by checking on a change 
+    (well, after a slight lag of 10 seconds or less by default) by checking on a change 
     in the modified time of the file. If there is an error, it will sleep for 30 seconds
     to allow the user to fix the error, and then it will attempt to reload it again.
     
@@ -20,9 +20,12 @@ class AlgorithmHandler(object):
     is called below by the main_loop() function.  The user is allowed to code 
     anything with any library, but they are only given the asks, bids, and matches 
     from the order book and websocket feed.
+    
+    Notable arguments:
+    run_rate: This is how often the algorithm is called, in seconds
     """
     
-    def __init__(self,ns, authenticated_client, order_handler, algorithm_file='./algorithm.py', debug = False):
+    def __init__(self,ns, authenticated_client, order_handler, algorithm_file='./algorithm.py', debug = False, run_rate = 0.1):
         self.ns = ns
         self.authenticated_client = authenticated_client
         self.order_handler = order_handler
@@ -31,7 +34,7 @@ class AlgorithmHandler(object):
         self.event = multiprocessing.Event()
         self.algorithm_file = algorithm_file
         self.algorithm_reload_time = 10
-        self.algorithm_run_rate = 0.1
+        self.algorithm_run_rate = run_rate  #how often the algorithm runs
 
     def start(self):
         self.process = multiprocessing.Process(target=self.main_loop, args=(self.ns,self.shutdown_event))
