@@ -16,7 +16,7 @@ from argparse import Action, ArgumentParser
 import os
 
 exchanges = ['coinbase']
-products = ['BTC-USD','ETH-USD','LTC-USD']
+products = ['BTC-USD','ETH-USD','LTC-USD','XRP-USD']
 
 
 class ExchangeArgumentAction(Action):
