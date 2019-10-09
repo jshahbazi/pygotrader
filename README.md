@@ -72,4 +72,4 @@ While the program offers buying and selling via menu commands, there is also the
 ```
 
 ### Performance Notes
-* The infrastructure for Coinbase's exchange runs on AWS, so the best place to run this (or any sort of trading utlity) is AWS
+* The infrastructure for Coinbase's exchange runs on AWS, so the best place to run this (or any sort of trading utility) is AWS
